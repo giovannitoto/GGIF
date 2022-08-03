@@ -34,7 +34,6 @@
 #' @return A list.
 #'
 #' @seealso \code{\link{update_b_mu}}, \code{\link{update_mu}}, \code{\link{update_eta}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
-#'
 AGS_SIS <- function(Y,
                     X = NULL, W = NULL,
                     seed = 28,
@@ -85,26 +84,27 @@ AGS_SIS <- function(Y,
 
   if(is.null(kinit)) kinit <- min(floor(log(p) * kval), p)
   if(is.null(kmax)) kmax <- p + 1
-  if(kmax < kinit) stop("kmax must be greater or equal than kinit.")
+  if(kmax < kinit) stop("'kmax' must be greater or equal than 'kinit'.")
 
   if("all" %in% output) {
-    output = c("time",
-               "numFactors",
-               "loadSamples",       # lambda
-               "shrinkCoefSamples", # beta
-               "coefSamples",       # mu
-               "sigmacol",          # 1/sigma^2 (vector)
-               "bmuCoefSamples",    # bmu
-               "etaval"             # eta
+    output = c("mu",          # coefSamples          : pxc
+               "bmu",         # bmuCoefSamples       : qxc
+               "beta",        # shrinkCoefSamples    : qxk
+               "eta",         # etaval               : nxk
+               "lambda",      # loadSamples          : pxk
+               "sigmacol",    # sigmacol (1/sigma^2) : p
+               "numFactors",  # numFactors (kstar)   : t
+               "time"        # time                 : 1
     )
   }
 
-  k <- kinit                          # number of factors to start with
-  kstar <- k - 1                      # number of active factors
+
+  k <- kinit                         # number of factors to start with
+  kstar <- k - 1                     # number of active factors
   sp <- floor((nrun - burn) / thin)  # number of posterior samples
 
   # Transformation for the response
-  a_j <- function(j) {
+  a_j <- function(j, y_max) {
     val <- j
     val[j == y_max + 1] <- Inf
     val
@@ -113,8 +113,8 @@ AGS_SIS <- function(Y,
   # Bounds for truncated normal
   a_y <- a_yp1 <- matrix(NA, nrow = n, ncol = p)
   for(j in 1:p) {
-    a_y[, j] <- a_j(Y[, j])        # a_y = a_j(y)
-    a_yp1[, j] <- a_j(Y[, j] + 1)  # a_yp1 = a_j(y + 1)
+    a_y[, j] <- a_j(Y[, j], y_max)        # a_y = a_j(y)
+    a_yp1[, j] <- a_j(Y[, j] + 1, y_max)  # a_yp1 = a_j(y + 1)
   }
 
   # Adaptive probability
@@ -166,17 +166,15 @@ AGS_SIS <- function(Y,
   # -------------------------------------------------------------------------- #
   # Allocate output object memory
   if(!is.null(W)) {
-    if("coefSamples" %in% output) {
-      MU <- list()
-    }
-    if("bmuCoefSamples" %in% output) BMU = list()
+    if("mu" %in% output) MU <- list()
+    if("bmu" %in% output) BMU <- list()
   }
-  if("loadSamples" %in% output) LAMBDA <- list()
-  if("etaval" %in% output) ETA <- list()
-  if("shrinkCoefSamples" %in% output) BETA <- list()
+  if("beta" %in% output) BETA <- list()
+  if("eta" %in% output) ETA <- list()
+  if("lambda" %in% output) LAMBDA <- list()
+  if("sigmacol" %in% output) sig <- list()
   if("numFactors" %in% output) K <- rep(NA, sp)
   if("time" %in% output) runtime <- NULL
-  if("sigmacol" %in% output) sig <- list()
 
   ind <- 1
   # -------------------------------------------------------------------------- #
@@ -189,13 +187,13 @@ AGS_SIS <- function(Y,
     # ------------------------------------------------------------------------ #
     # 1 - update Z
     if(is.null(W)) {
-      Zmean <- (tcrossprod(eta, Lambda))  # eta * t(Lambda)
+      Zmean <- tcrossprod(eta, Lambda)  # eta * t(Lambda)
     } else {
-      Zmean <- (tcrossprod(W, mu) + tcrossprod(eta, Lambda))
+      Zmean <- tcrossprod(eta, Lambda) + tcrossprod(W, mu)
     }
     n_unif <- matrix(runif(n * p), nrow = n, ncol = p)
     Z <- truncnorm_lg(y_lower = log(a_y), y_upper = log(a_yp1),
-                      mu = Zmean, sigma = 1/sqrt(ps), u_rand = n_unif)
+                      mu = Zmean, sigma = 1 / sqrt(ps), u_rand = n_unif)
 
     if(!is.null(W)) {
       # ---------------------------------------------------------------------- #
@@ -222,7 +220,7 @@ AGS_SIS <- function(Y,
     # ------------------------------------------------------------------------ #
     # 5 - update Sigma
     Z_res <- Z - tcrossprod(eta, Lambda)
-    ps <- rgamma(p, as + 0.5*n, bs + 0.5 * colSums(Z_res^2))
+    ps <- rgamma(p, as + 0.5 * n, bs + 0.5 * colSums(Z_res ^ 2))
     # ------------------------------------------------------------------------ #
     # 6 - update beta
     pred <- X %*% Beta
@@ -279,14 +277,14 @@ AGS_SIS <- function(Y,
     # save sampled values (after burn-in period)
     if((i %% thin == 0) & (i > burn)) {
       if(!is.null(W)) {
-        if("coefSamples" %in% output) MU[[ind]] <- mu
-        if("bmuCoefSamples" %in% output) BMU[[ind]] <- b_mu
+        if("mu" %in% output) MU[[ind]] <- mu
+        if("bmu" %in% output) BMU[[ind]] <- b_mu
       }
-      if("loadSamples" %in% output) LAMBDA[[ind]] <- Lambda
-      if("shrinkCoefSamples" %in% output) BETA[[ind]] <- Beta
-      if("numFactors" %in% output) K[ind] <- kstar
-      if("etaval" %in% output) ETA[[ind]] <- eta
+      if("beta" %in% output) BETA[[ind]] <- Beta
+      if("eta" %in% output) ETA[[ind]] <- eta
+      if("lambda" %in% output) LAMBDA[[ind]] <- Lambda
       if("sigmacol" %in% output) sig[[ind]] <- ps
+      if("numFactors" %in% output) K[ind] <- kstar
       ind <- ind + 1
     }
     # ------------------------------------------------------------------------ #
@@ -300,7 +298,7 @@ AGS_SIS <- function(Y,
         eta <- cbind(eta[, active, drop = F], rnorm(n))
         vartheta_k <- rgamma(1, a_theta, b_theta)
         Plam <- diag(c(diag(Plam)[active, drop = F], vartheta_k))
-        Lambda_star <- cbind(Lambda_star[, active, drop = F], rnorm(p, 0, sd=sqrt(vartheta_k)))
+        Lambda_star <- cbind(Lambda_star[, active, drop = F], rnorm(p, 0, sd = sqrt(vartheta_k)))
         Phi <- cbind(Phi[, active, drop = F], rbinom(p, size = 1, prob = p_constant))
         rho <- c(rho[active, drop = F], 1)
         Lambda <- cbind(Lambda[, active, drop = F], Lambda_star[, k] * sqrt(rho[k]) * Phi[, k])
@@ -308,7 +306,7 @@ AGS_SIS <- function(Y,
         w <- c(w[active, drop = F], 1 - sum(w[active, drop = F]))
         v <- c(v[active, drop = F], 1)  # just to allocate memory
         d <- c(d[active, drop = F], k)
-      } else if (k<kmax) {
+      } else if (k < kmax) {
         # increase truncation by 1 and extend all variables, sampling from the prior/model
         k <- k + 1
         eta <- cbind(eta, rnorm(n))
@@ -328,27 +326,30 @@ AGS_SIS <- function(Y,
   }
   # -------------------------------------------------------------------------- #
   runtime <- proc.time() - t0
+  print(runtime)
   out <- lapply(output, function(x) {
     if(!is.null(W)) {
-      if(x == "coefSamples") return(MU)
-      if(x == "bmuCoefSamples") return(BMU)
+      if(x == "mu") return(MU)          # coefSamples        : pxc
+      if(x == "bmu") return(BMU)        # bmuCoefSamples     : qxc
     }
-    if(x == "loadSamples") return(LAMBDA)
-    if(x == "shrinkCoefSamples") return(BETA)
-    if(x == "numFactors") return(K)
-    if(x == "time") return(runtime[1])
-    if(x == "etaval") return(ETA)
-    if(x == "sigmacol") return(sig)
+    if(x == "beta") return(BETA)        # loadSamples        : pxk
+    if(x == "eta") return(ETA)          # shrinkCoefSamples  : qxk
+    if(x == "lambda") return(LAMBDA)    # etaval             : nxk
+    if(x == "sigmacol") return(sig)     # sigmacol           : p
+    if(x == "numFactors") return(K)     # numFactors (kstar) : t
+    if(x == "time") return(runtime[1])  # time               : 1
   })
   names(out) <- output
   out[["model_prior"]] <- "SIS"
-  out[["data"]] <- Y
-  if(!is.null(W)) out[["covariates"]] <- W
-  out[["metacovariates"]] <- X
+  out[["Y"]] <- Y                  # data           : nxp
+  if(!is.null(W)) out[["W"]] <- W  # covariates     : nxc
+  out[["X"]] <- X                  # metacovariates : pxq
   out[["hyperparameters"]] <- list(alpha = alpha, a_theta = a_theta,
                                    b_theta = b_theta, sd_b = sd_b,
                                    sd_mu = sd_mu, sd_beta = sd_beta,
-                                   as = as, bs = bs)
+                                   as = as, bs = bs, p_constant = p_constant,
+                                   WFormula = WFormula, XFormula = XFormula,
+                                   y_max = y_max)
   # -------------------------------------------------------------------------- #
   return(out)
   # -------------------------------------------------------------------------- #

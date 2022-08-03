@@ -1,3 +1,4 @@
 exportPattern("^[[:alpha:]]+")
+import(mathjaxr)
 importFrom(Rcpp, evalCpp)
 useDynLib(GGIF, .registration = TRUE)
