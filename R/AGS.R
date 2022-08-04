@@ -3,13 +3,13 @@
 #' Implementation of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
 #'
 #' @param Y A nxp matrix of counts.
-#' @param X A pxq matrix of meta-covariates (numeric or factor variables).
-#' @param W A nxc matrix of covariates (numeric or factor variables).
-#' @param seed Seed.
-#' @param stdx If TRUE, standardize numeric meta-covariates.
-#' @param stdw If TRUE, standardize numeric covariates.
-#' @param XFormula Formula which specifies the meta-covariates inserted in the model.
-#' @param WFormula Formula which specifies the covariates inserted in the model.
+#' @param X A pxq matrix of meta-covariates; the variables must be numeric or factors.
+#' @param W A nxc matrix of covariates; the variables must be numeric or factors.
+#' @param seed Seed. Default is 28.
+#' @param stdx Boolean: if TRUE, numeric meta-covariates are standardized.
+#' @param stdw Boolean: if TRUE, numeric covariates are standardized.
+#' @param XFormula Formula specifying  the meta-covariates inserted in the model.
+#' @param WFormula Formula specifying  the covariates inserted in the model.
 #' @param kinit Minimun number of latent factors. Default is \code{min(floor(log(p)*kval),p)}.
 #' @param kmax Maximum number of latent factors. Default is \code{p+1}.
 #' @param kval Initial number of latent factors. Default is 6.
@@ -17,14 +17,14 @@
 #' @param burn Number of burning iterations (number of iterations to discard). Default is \code{round(nrun/4)}.
 #' @param thin Thinning value (number of iterations to skip between saving iterations). Default is 1.
 #' @param start_adapt Number of iterations before adaptation. Default is 50.
-#' @param y_max A fixed and known upper bound for all counts in \code{Y}. Default is \code{Inf}.
+#' @param y_max A fixed and known upper bound for the values in \code{Y}. Default is \code{Inf}.
 # Parameters for SIS:
 #' @param b0,b1 Positive constants for the adaptive probability. Default is \code{c(1,5*10^(-4))}.
 #' @param sd_b Standard deviation for \eqn{b}. Default is 1.
 #' @param sd_mu Standard deviation for \eqn{\mu}. Default is 1.
 #' @param sd_beta Standard deviation for \eqn{\beta}. Default is 1.
-#' @param a_theta,b_theta DA SCRIVERE.
-#' @param as,bs \eqn{\sigma^{-2} \sim Gamma(\code{as}, \code{bs})}.
+#' @param a_theta,b_theta Default is \code{c(1,1)}.
+#' @param as,bs \eqn{\sigma^{-2} \sim Gamma(\code{as}, \code{bs})}. Default is \code{c(1,1)}.
 #' @param p_constant Factor probability constant. Default is \code{10*exp(1)*log(p)/p}.
 #' @param alpha \eqn{Beta(1, \code{alpha})} for pi.
 # Other settings:
@@ -45,15 +45,23 @@ AGS_SIS <- function(Y,
                     start_adapt = 50,
                     b0 = 1, b1 = 5*10^(-4),
                     sd_b = 1, sd_mu = 1, sd_beta = 1,
-                    a_theta, b_theta,
-                    as, bs,
+                    a_theta = 1, b_theta = 1,
+                    as = 1, bs = 1,
                     p_constant = NULL, alpha,
                     y_max = Inf,
                     output = "all",
                     verbose = TRUE) {
   # -------------------------------------------------------------------------- #
   # set seed
-  set.seed(seed)
+  if((length(seed) != 1) | (seed != round(seed))) {
+    set.seed(seed)
+  } else {
+    stop("'seed' not valid: it must be an integer.")
+  }
+  # -------------------------------------------------------------------------- #
+  if((length(verbose) != 1) | !is.logical(verbose)) {
+    stop("'verbose' not valid: it must be 'TRUE' or 'FALSE'.")
+  }
   # -------------------------------------------------------------------------- #
   n <- dim(Y)[1]
   p <- dim(Y)[2]
@@ -61,6 +69,12 @@ AGS_SIS <- function(Y,
   if(is.null(X)) {
     X <- matrix(1, nrow = p, ncol = 1)
   } else {
+    if(p != nrow(X)) {
+      stop("'Y' and 'X' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X'.")
+    }
+    if((length(stdx) != 1) | !is.logical(stdx)) {
+      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
+    }
     if(stdx) {
       is.fact.x <- sapply(X, is.factor)
       X[, is.fact.x == FALSE] <- scale(X[, is.fact.x == FALSE])
@@ -72,6 +86,12 @@ AGS_SIS <- function(Y,
   q <- dim(X)[2]
 
   if(!is.null(W)) {
+    if(n != nrow(W)) {
+      stop("'Y' and 'W' not compatible: they must have the same number of rows.")
+    }
+    if((length(stdw) != 1) | !is.logical(stdw)) {
+      stop("'stdw' not valid: it must be 'TRUE' or 'FALSE'.")
+    }
     if(stdw){
       is.fact.w <- sapply(W, is.factor)
       W[, is.fact.w == FALSE] <-  scale(W[, is.fact.w == FALSE])
@@ -81,90 +101,138 @@ AGS_SIS <- function(Y,
     }
     c <- ncol(W)
   }
-
-  if(is.null(kinit)) kinit <- min(floor(log(p) * kval), p)
-  if(is.null(kmax)) kmax <- p + 1
-  if(kmax < kinit) stop("'kmax' must be greater or equal than 'kinit'.")
-
-  if("all" %in% output) {
-    output = c("mu",          # coefSamples          : pxc
-               "bmu",         # bmuCoefSamples       : qxc
-               "beta",        # shrinkCoefSamples    : qxk
-               "eta",         # etaval               : nxk
-               "lambda",      # loadSamples          : pxk
-               "sigmacol",    # sigmacol (1/sigma^2) : p
-               "numFactors",  # numFactors (kstar)   : t
-               "time"        # time                 : 1
-    )
+  # -------------------------------------------------------------------------- #
+  if(is.null(kinit)) {
+    kinit <- min(floor(log(p) * kval), p)
+  } else if((length(kint) != 1) | (kinit != round(kinit))) {
+    stop("'kinit' not valid: it must be an integer.")
   }
-
-
-  k <- kinit                         # number of factors to start with
+  if(is.null(kmax)) {
+    kmax <- p + 1
+  } else if((length(kmax) != 1) | (kmax != round(kmax)) | (kmax < kinit)) {
+    stop("'kmax' not valid: it must be an integer greater than or equal to 'kinit'.")
+  }
+  k <- kinit                         # number of factors to start with (active and inactive)
   kstar <- k - 1                     # number of active factors
-  sp <- floor((nrun - burn) / thin)  # number of posterior samples
-
+  # -------------------------------------------------------------------------- #
+  if((length(nrun) != 1) | (nrun != round(nrun))) {
+    stop("'nrun' not valid: it must be an integer.")
+  }
+  if((length(burn) != 1) | (burn != round(burn)) | (burn >= nrun)) {
+    stop("'burn' not valid: it must be an integer less than 'nrun'.")
+  }
+  if((length(thin) != 1) | (thin != round(thin)) | (thin > nrun - burn)) {
+    stop("'thin' not valid: it must be an integer greater than or equal to 'nrun - burn'.")
+  }
+  if((length(start_adapt) != 1) | (start_adapt != round(start_adapt))) {
+    stop("'start_adapt' not valid: it must be an integer.")
+  }
+  # number of posterior samples
+  sp <- floor((nrun - burn) / thin)
+  # -------------------------------------------------------------------------- #
+  if((length(y_max) != 1) | !is.numeric(y_max)) {
+    stop("'y_max' not valid: it must be a number or 'Inf'.")
+  }
   # Transformation for the response
   a_j <- function(j, y_max) {
     val <- j
     val[j == y_max + 1] <- Inf
     val
   }
-
   # Bounds for truncated normal
   a_y <- a_yp1 <- matrix(NA, nrow = n, ncol = p)
   for(j in 1:p) {
     a_y[, j] <- a_j(Y[, j], y_max)        # a_y = a_j(y)
     a_yp1[, j] <- a_j(Y[, j] + 1, y_max)  # a_yp1 = a_j(y + 1)
   }
-
-  # Adaptive probability
-  prob <- 1 / exp(b0 + b1 * seq(1, nrun))  # a0, a1 negative costants
-  uu <- runif(nrun)
-
-  # p constant (c_p)
-  if(is.null(p_constant)) p_constant <- 10 * exp(1) * log(p) / p
-
-  # precision of mu and b
-  prec_b  <- 1 / (sd_b)  ^ 2
-  prec_mu <- 1 / (sd_mu) ^ 2
-  # sigma^-2
-  ps <- rgamma(p, as, bs)
   # -------------------------------------------------------------------------- #
-  # Initialize latent normal variable for the model
+  # Adaptive probability
+  if((length(b0) != 1) | (b0 < 0)) {
+    stop("'b0' not valid: it must be greater than or equal to 0.")
+  }
+  if((length(b1) != 1) | (b1 <= 0)) {
+    stop("'b1' not valid: it must be greater than 0.")
+  }
+  prob <- 1 / exp(b0 + b1 * seq(1, nrun))
+  uu <- runif(nrun)
+  # -------------------------------------------------------------------------- #
+  # p constant (c_p)
+  if(is.null(p_constant)) {
+    p_constant <- 10 * exp(1) * log(p) / p
+  } else if((length(p_constant) != 1) | (p_constant <= 0) | (p_constant >= 1)) {
+    stop("'p_constant' not valid: it must be a number in (0,1).")
+  }
+  # -------------------------------------------------------------------------- #
+  # check fixed parameters
+  if((length(sd_b) != 1) | (sd_b <= 0)) {
+    stop("'sd_b' not valid: it must be greater than 0.")
+  }
+  if((length(sd_mu) != 1) | (sd_mu <= 0)) {
+    stop("'sd_mu' not valid: it must be greater than 0.")
+  }
+  if((length(sd_beta) != 1) | (sd_beta <= 0)) {
+    stop("'sd_beta' not valid: it must be greater than 0.")
+  }
+  if((length(a_theta) != 1) | (a_theta <= 0)) {
+    stop("'a_theta' not valid: it must be greater than 0.")
+  }
+  if((length(b_theta) != 1) | (b_theta <= 0)) {
+    stop("'b_theta' not valid: it must be greater than 0.")
+  }
+  if((length(as) != 1) | (as <= 0)) {
+    stop("'as' not valid: it must be greater than 0.")
+  }
+  if((length(bs) != 1) | (bs <= 0)) {
+    stop("'bs' not valid: it must be greater than 0.")
+  }
+  # -------------------------------------------------------------------------- #
+  # Initialize sigma^-2
+  ps <- rgamma(p, as, bs)
+  # Initialize the nxp matrix of latent normal variables
   Z <- matrix(NA, nrow = n, ncol = p)
-
-  # b_mu qxk, mu
+  # Initialize parameters related to the covariates, if W exists
   if(!is.null(W)) {
     mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)  # mean coeff of the data
-    b_mu <- matrix(rnorm(q * c), nrow = c, ncol = q)        # x effects on mu coeff
+    b_mu <- matrix(rnorm(q * c), nrow = c, ncol = q)          # x effects on mu coeff
+    # precision of mu and b_mu
+    prec_b  <- 1 / (sd_b)  ^ 2
+    prec_mu <- 1 / (sd_mu) ^ 2
   }
-
-  # lambda star, eta
+  # Initialize lambda star (pxq)
   Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)  # loading matrix
+  # Initialize eta (nxk)
   eta <- matrix(rnorm(n * k), nrow = n, ncol = k)          # latent factors
-
-  # beta qxk --> local coef
+  # Initialize Beta (qxk) and pred (pxk)
   Beta <- matrix(rnorm(q * k), nrow = q, ncol = k)  # traits effect on local shrinkage
   pred <- X %*% Beta                                # local shrinkage coefficients
-
-  # Phi (local) pxk
   logit <- plogis(pred)
+  # Initialize Phi pxk
   Phi <- matrix(rbinom(p * k, size = 1, prob = p_constant), nrow = p, ncol = k)
-  # Phi|beta ~ Ber(logit*p_constant)
-
-  # pi_h
+  # Initialize pi_h, h = 1, ..., k
   v <- c(rbeta(k - 1, shape1 = 1, shape2 = alpha), 1)
-  w <- v * c(1, cumprod(1 - v[-k]))  # product up to  l-1
+  w <- v * c(1, cumprod(1 - v[-k]))  # product up to  l - 1
   d <- rep(k, k)                     # augmented data
   rho <- rep(1, k)                   # preallocation for Bernoulli
-
-  # Lambda
-  Lambda <- t(t(Lambda_star) * sqrt(rho)) * sqrt(Phi)
-
-  # precision matrix of lambda star
+  # Initialize the precision matrix of lambda star
   Plam <- diag(rgamma(k, a_theta, b_theta))
+  # Compute Lambda (pxk)
+  Lambda <- t(t(Lambda_star) * sqrt(rho)) * sqrt(Phi)
   # -------------------------------------------------------------------------- #
   # Allocate output object memory
+  valid_outputs <- c("mu",          # coefSamples          : pxc
+                     "bmu",         # bmuCoefSamples       : qxc
+                     "beta",        # shrinkCoefSamples    : qxk
+                     "eta",         # etaval               : nxk
+                     "lambda",      # loadSamples          : pxk
+                     "sigmacol",    # sigmacol (1/sigma^2) : p
+                     "numFactors",  # numFactors (kstar)   : t
+                     "time"         # time                 : 1
+                    )
+  if("all" %in% output) {
+    output <- valid_outputs
+  } else {
+    output <- intersect(output, valid_outputs)
+  }
   if(!is.null(W)) {
     if("mu" %in% output) MU <- list()
     if("bmu" %in% output) BMU <- list()
@@ -175,13 +243,13 @@ AGS_SIS <- function(Y,
   if("sigmacol" %in% output) sig <- list()
   if("numFactors" %in% output) K <- rep(NA, sp)
   if("time" %in% output) runtime <- NULL
-
-  ind <- 1
   # -------------------------------------------------------------------------- #
   # ADAPTIVE GIBBS SAMPLING
   # -------------------------------------------------------------------------- #
+  ind <- 1
+  # start time
   t0 <- proc.time()
-
+  # algorithm starts here
   for (i in 1:nrun) {
     if(verbose == TRUE && i %% 10 == 0) cat(i, ":", k, "active factors\n")
     # ------------------------------------------------------------------------ #
@@ -324,9 +392,8 @@ AGS_SIS <- function(Y,
       }
     }
   }
-  # -------------------------------------------------------------------------- #
   runtime <- proc.time() - t0
-  print(runtime)
+  # -------------------------------------------------------------------------- #
   out <- lapply(output, function(x) {
     if(!is.null(W)) {
       if(x == "mu") return(MU)          # coefSamples        : pxc
@@ -341,9 +408,9 @@ AGS_SIS <- function(Y,
   })
   names(out) <- output
   out[["model_prior"]] <- "SIS"
-  out[["Y"]] <- Y                  # data           : nxp
-  if(!is.null(W)) out[["W"]] <- W  # covariates     : nxc
-  out[["X"]] <- X                  # metacovariates : pxq
+  out[["Y"]] <- Y                       # data               : nxp
+  if(!is.null(W)) out[["W"]] <- W       # covariates         : nxc
+  out[["X"]] <- X                       # metacovariates     : pxq
   out[["hyperparameters"]] <- list(alpha = alpha, a_theta = a_theta,
                                    b_theta = b_theta, sd_b = sd_b,
                                    sd_mu = sd_mu, sd_beta = sd_beta,
