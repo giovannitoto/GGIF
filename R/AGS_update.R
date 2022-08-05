@@ -10,6 +10,8 @@
 #' @param c DA SCRIVERE
 #'
 #' @return A qxc matrix.
+#'
+#' @importFrom stats rnorm
 update_b_mu <- function(X, prec_mu, prec_b, mu, q, c) {
   Trsg <- X * prec_mu
   if(q > 1) {
@@ -37,6 +39,7 @@ update_b_mu <- function(X, prec_mu, prec_b, mu, q, c) {
 #'
 #' @param j DA SCRIVERE
 #' @param Qbet DA SCRIVERE
+#' @param W DA SCRIVERE
 #' @param Z_res DA SCRIVERE
 #' @param ps DA SCRIVERE
 #' @param b_mu DA SCRIVERE
@@ -44,6 +47,8 @@ update_b_mu <- function(X, prec_mu, prec_b, mu, q, c) {
 #' @param c DA SCRIVERE
 #'
 #' @return A 1xc matrix.
+#'
+#' @importFrom stats rnorm
 update_mu <- function(j, Qbet, W, Z_res, ps, b_mu, Xcov, c) {
   Lbet <- t(chol(Qbet))
   bbet <- (t(W) %*% Z_res[, j]) + ps[j] * crossprod(b_mu, t(Xcov)[, j])
@@ -67,6 +72,8 @@ update_mu <- function(j, Qbet, W, Z_res, ps, b_mu, Xcov, c) {
 #' @param n Number of rows of eta.
 #'
 #' @return A nxk matrix.
+#'
+#' @importFrom stats rnorm
 update_eta <- function(Lambda, ps, k, Z, n) {
   Lmsg <- Lambda * ps
   Veta1 <- base::diag(k) + crossprod(Lmsg, Lambda)
@@ -96,6 +103,8 @@ update_eta <- function(Lambda, ps, k, Z, n) {
 #' @param q DA SCRIVERE
 #'
 #' @return A qx1 matrix.
+#'
+#' @importFrom stats rnorm
 update_beta <- function(h, Xcov, Dt, Bh_1, Phi_L, q) {
   Qbeta <- t(Dt[, h] * Xcov) %*% Xcov + Bh_1
   bbeta <- crossprod(Xcov, (Phi_L[, h] - 0.5))
@@ -122,6 +131,8 @@ update_beta <- function(h, Xcov, Dt, Bh_1, Phi_L, q) {
 #' @param k DA SCRIVERE
 #'
 #' @return A 1xk matrix.
+#'
+#' @importFrom stats rnorm
 update_Lambda_star <- function(j, etarho, Phi, Plam, ps, Z, k) {
   etaj <- t(etarho * Phi[j,])
   eta2 <- crossprod(etaj)
@@ -153,6 +164,8 @@ update_Lambda_star <- function(j, etarho, Phi, Plam, ps, Z, k) {
 #' @param w DA SCRIVERE
 #'
 #' @return A integer in 1, ..., k.
+#'
+#' @importFrom stats dnorm rmultinom
 update_d <- function(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w) {
   phirho <- Phi[rep(1:p, each = n), -h] * sqrt(rho[-h])
   muijh0 <- rowSums(etalambdastar[,-h] * phirho)
@@ -183,6 +196,8 @@ update_d <- function(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w) {
 #' @param sdy DA SCRIVERE
 #'
 #' @return A pxk matrix.
+#'
+#' @importFrom stats dnorm runif
 update_Phi <- function(rho, logit, p_constant, p, n,
                        eta, Lambda_star, Phi, Z, sdy) {
   # select active factors

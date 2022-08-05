@@ -7,6 +7,8 @@
 #' @param columns Default is \code{"k"}.
 #'
 #' @return A list containing the posterior means of the parameters specified in \code{parameters}.
+#'
+#' @export
 posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
   # remove invalid strings from 'parameters'
   valid_parameters <- c("mu", "bmu", "sigmacol", "omega", "omega_inv")

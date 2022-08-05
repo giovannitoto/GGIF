@@ -1,6 +1,6 @@
 Package: GGIF
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Generalized Infinite Factorization models
 Version: 0.1.0
 Author: Who wrote it
 Maintainer: The package maintainer <yourself@somewhere.net>
@@ -9,13 +9,14 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Imports:
     LaplacesDemon,
     mathjaxr,
     matrixStats,
     pgdraw,
-    Rcpp (>= 1.0.8.3),
-    RcppArmadillo
+    Rcpp,
+    RcppArmadillo,
+    stats
 LinkingTo: 
     Rcpp,
     RcppArmadillo

@@ -25,10 +25,10 @@ AGS_SIS(
   sd_b = 1,
   sd_mu = 1,
   sd_beta = 1,
-  a_theta,
-  b_theta,
-  as,
-  bs,
+  a_theta = 1,
+  b_theta = 1,
+  as = 1,
+  bs = 1,
   p_constant = NULL,
   alpha,
   y_max = Inf,
@@ -39,19 +39,19 @@ AGS_SIS(
 \arguments{
 \item{Y}{A nxp matrix of counts.}
 
-\item{X}{A pxq matrix of meta-covariates (numeric or factor variables).}
+\item{X}{A pxq matrix of meta-covariates; the variables must be numeric or factors.}
 
-\item{W}{A nxc matrix of covariates (numeric or factor variables).}
+\item{W}{A nxc matrix of covariates; the variables must be numeric or factors.}
 
-\item{seed}{Seed.}
+\item{seed}{Seed. Default is 28.}
 
-\item{stdx}{If TRUE, standardize numeric meta-covariates.}
+\item{stdx}{Boolean: if TRUE, numeric meta-covariates are standardized.}
 
-\item{stdw}{If TRUE, standardize numeric covariates.}
+\item{stdw}{Boolean: if TRUE, numeric covariates are standardized.}
 
-\item{WFormula}{Formula which specifies the covariates inserted in the model.}
+\item{WFormula}{Formula specifying  the covariates inserted in the model.}
 
-\item{XFormula}{Formula which specifies the meta-covariates inserted in the model.}
+\item{XFormula}{Formula specifying  the meta-covariates inserted in the model.}
 
 \item{kinit}{Minimun number of latent factors. Default is \code{min(floor(log(p)*kval),p)}.}
 
@@ -75,15 +75,15 @@ AGS_SIS(
 
 \item{sd_beta}{Standard deviation for \eqn{\beta}. Default is 1.}
 
-\item{a_theta, b_theta}{DA SCRIVERE.}
+\item{a_theta, b_theta}{Default is \code{c(1,1)}.}
 
-\item{as, bs}{\eqn{\sigma^{-2} \sim Gamma(\code{as}, \code{bs})}.}
+\item{as, bs}{\eqn{\sigma^{-2} \sim Gamma(\code{as}, \code{bs})}. Default is \code{c(1,1)}.}
 
 \item{p_constant}{Factor probability constant. Default is \code{10*exp(1)*log(p)/p}.}
 
 \item{alpha}{\eqn{Beta(1, \code{alpha})} for pi.}
 
-\item{y_max}{A fixed and known upper bound for all counts in \code{Y}. Default is \code{Inf}.}
+\item{y_max}{A fixed and known upper bound for the values in \code{Y}. Default is \code{Inf}.}
 
 \item{output}{Default is \code{"all"}.}
 

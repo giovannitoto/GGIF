@@ -11,6 +11,8 @@ update_mu(j, Qbet, W, Z_res, ps, b_mu, Xcov, c)
 
 \item{Qbet}{DA SCRIVERE}
 
+\item{W}{DA SCRIVERE}
+
 \item{Z_res}{DA SCRIVERE}
 
 \item{ps}{DA SCRIVERE}

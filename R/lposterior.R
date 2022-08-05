@@ -25,6 +25,8 @@
 #' If \code{columns="k"}, \code{beta_max}, \code{eta_max} and \code{lambda_max} contain only columns linked to active factors; if \code{columns="kstar"}, they contains columns linked to both active and inactive factors
 #'
 #' @seealso This function is applied to an output of \code{\link{AGS_SIS}}. The function \code{\link{lposterior_function}} is used to compute the log-posterior probability of each MCMC iteration.
+#'
+#' @export
 lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
                        columns = "k", parameters = "all", seed = 28) {
   # set seed
@@ -108,6 +110,8 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
 #' @return A number which is the log-posterior probability of the \code{ind}th iteration of a MCMC chain.
 #'
 #' @seealso This function is applied to an output of \code{\link{AGS_SIS}}.
+#'
+#' @importFrom stats dgamma dnorm plogis rnorm
 lposterior_function <- function(ind, out_MCMC, columns = "k") {
   hyperpar <- out_MCMC$hyperparameters
   # dimension of the data
@@ -249,6 +253,8 @@ log_multinorm <- function(z, mu, omega_inv, omega_log_det) {
 #' @return A nxp matrix.
 #'
 #' @seealso This function is used in \code{\link{lposterior_function}}.
+#'
+#' @importFrom stats runif
 gen_z <- function(Y, mean, ps, y_max) {
   n <- nrow(Y)
   p <- ncol(Y)

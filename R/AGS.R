@@ -34,6 +34,12 @@
 #' @return A list.
 #'
 #' @seealso \code{\link{update_b_mu}}, \code{\link{update_mu}}, \code{\link{update_eta}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
+#'
+#' @importFrom stats formula model.matrix plogis rbeta rbinom rgamma rnorm runif
+#'
+#' @import mathjaxr
+#'
+#' @export
 AGS_SIS <- function(Y,
                     X = NULL, W = NULL,
                     seed = 28,
@@ -54,9 +60,9 @@ AGS_SIS <- function(Y,
   # -------------------------------------------------------------------------- #
   # set seed
   if((length(seed) != 1) | (seed != round(seed))) {
-    set.seed(seed)
-  } else {
     stop("'seed' not valid: it must be an integer.")
+  } else {
+    set.seed(seed)
   }
   # -------------------------------------------------------------------------- #
   if((length(verbose) != 1) | !is.logical(verbose)) {
@@ -104,7 +110,7 @@ AGS_SIS <- function(Y,
   # -------------------------------------------------------------------------- #
   if(is.null(kinit)) {
     kinit <- min(floor(log(p) * kval), p)
-  } else if((length(kint) != 1) | (kinit != round(kinit))) {
+  } else if((length(kinit) != 1) | (kinit != round(kinit))) {
     stop("'kinit' not valid: it must be an integer.")
   }
   if(is.null(kmax)) {
