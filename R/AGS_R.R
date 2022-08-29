@@ -1,6 +1,6 @@
-#' AGS for GIF models with SIS prior (C++)
+#' AGS for GIF models with SIS prior (R)
 #'
-#' Implementation in C++ of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
+#' Implementation in R of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
 #'
 #' @param Y A nxp matrix of counts.
 #' @param X A pxq matrix of meta-covariates; the variables must be numeric or factors.
@@ -33,31 +33,30 @@
 #'
 #' @return A list.
 #'
-#' @seealso \code{\link{update_b_mu_R}}, \code{\link{update_mu}}, \code{\link{update_eta_R}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
+#' @seealso \code{\link{update_b_mu_R}}, \code{\link{update_mu_R}}, \code{\link{update_eta_R}}, \code{\link{update_Lambda_star_R}}, \code{\link{update_d_R}}, \code{\link{update_Phi_R}}
 #'
 #' @importFrom stats formula model.matrix plogis rbeta rbinom rgamma rnorm runif
 #'
 #' @import mathjaxr
-#' @import RcppArmadillo
 #'
 #' @export
-AGS_SIS <- function(Y,
-                    X = NULL, W = NULL,
-                    seed = 28,
-                    stdx = TRUE, stdw = TRUE,
-                    WFormula = formula("~ ."),
-                    XFormula = formula("~ ."),
-                    kinit = NULL, kmax = NULL, kval = 6,
-                    nrun = 100, burn = round(nrun/4), thin = 1,
-                    start_adapt = 50,
-                    b0 = 1, b1 = 5*10^(-4),
-                    sd_b = 1, sd_mu = 1, sd_beta = 1,
-                    a_theta = 1, b_theta = 1,
-                    as = 1, bs = 1,
-                    p_constant = NULL, alpha,
-                    y_max = Inf,
-                    output = "all",
-                    verbose = TRUE) {
+AGS_SIS_R <- function(Y,
+                      X = NULL, W = NULL,
+                      seed = 28,
+                      stdx = TRUE, stdw = TRUE,
+                      WFormula = formula("~ ."),
+                      XFormula = formula("~ ."),
+                      kinit = NULL, kmax = NULL, kval = 6,
+                      nrun = 100, burn = round(nrun/4), thin = 1,
+                      start_adapt = 50,
+                      b0 = 1, b1 = 5*10^(-4),
+                      sd_b = 1, sd_mu = 1, sd_beta = 1,
+                      a_theta = 1, b_theta = 1,
+                      as = 1, bs = 1,
+                      p_constant = NULL, alpha,
+                      y_max = Inf,
+                      output = "all",
+                      verbose = TRUE) {
   # -------------------------------------------------------------------------- #
   # set seed
   if((length(seed) != 1) | !is.numeric(seed) | (seed != round(seed))) {
@@ -282,10 +281,10 @@ AGS_SIS <- function(Y,
       } else {
         Qbet <- prec_mu + crossprod(W)
       }
-      # mu <- t(sapply(1:p, update_mu, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
+      # mu <- t(sapply(1:p, update_mu_R, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
       #                b_mu=b_mu, Xcov=X, c=c))
       for(j in 1:p) {
-        mu[j, ] <- update_mu(j, Qbet, W, Z_res, ps, b_mu, X, c)
+        mu[j, ] <- update_mu_R(j, Qbet, W, Z_res, ps, b_mu, X, c)
       }
       Z <- Z - tcrossprod(W, mu)
       # ---------------------------------------------------------------------- #
@@ -310,14 +309,14 @@ AGS_SIS <- function(Y,
     # 6.4 Update beta_h
     Bh_1 <- diag(rep(sd_beta^2, q) ^ {-1})
     for(h in 1:k) {
-      Beta[, h] <- update_beta(h, X, Dt, Bh_1, Phi_L, q)
+      Beta[, h] <- update_beta_R(h, X, Dt, Bh_1, Phi_L, q)
     }
-    # Beta <- sapply(1:k, update_beta, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
+    # Beta <- sapply(1:k, update_beta_R, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
     # if(q==1) Beta <- matrix(Beta, nrow=1, ncol=k)
     # ------------------------------------------------------------------------ #
     # 7 - update Lambda and Lambda_star
     etarho <- t(eta) * rho
-    # Lambda_star <- t(sapply(1:p, update_Lambda_star, etarho=etarho, Phi=Phi,
+    # Lambda_star <- t(sapply(1:p, update_Lambda_star_R, etarho=etarho, Phi=Phi,
     #                         Plam=Plam, ps=ps, Z=Z, k=k))
     for (j in 1:p) {
       Lambda_star[j, ] <- update_Lambda_star_R(j, etarho, Phi, Plam, ps, Z, k)
@@ -326,10 +325,11 @@ AGS_SIS <- function(Y,
     # ------------------------------------------------------------------------ #
     # 8.1 - update d
     sdy <- matrix(rep(sqrt(1/ps), n), n, p, byrow = TRUE)
-    # d <- sapply(1:k, function(h) update_d, Phi=Phi, p=p, n=n, rho=rho,
-    #             eta=eta, lambdastar=Lambda_star, Z=Z, sdy=sdy, k=k, w=w)
+    etalambdastar <- eta[rep(1:n, p), ] * Lambda_star[rep(1:p, each=n), ]
+    # d <- sapply(1:k, function(h) update_d_R, Phi=Phi, p=p, n=n, rho=rho,
+    #             etalambdastar=etalambdastar, Z=Z, sdy=sdy, k=k, w=w)
     for(h in 1:k) {
-      d[h] <- update_d(h, Phi, p, n, rho, eta, Lambda_star, Z, sdy, k, w)
+      d[h] <- update_d_R(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w)
     }
     rho <- rep(1, k)
     rho[d <= seq(1, k)] <- 0
@@ -345,8 +345,8 @@ AGS_SIS <- function(Y,
     # 9 - update Phi
     pred <- X %*% Beta
     logit <- plogis(pred)
-    Phi <- update_Phi(rho, logit, p_constant, p, n,
-                      eta, Lambda_star, Phi, Z, sdy, k)
+    Phi <- update_Phi_R(rho, logit, p_constant, p, n,
+                        eta, Lambda_star, Phi, Z, sdy)
     # ------------------------------------------------------------------------ #
     # save sampled values (after burn-in period)
     if((i %% thin == 0) & (i > burn)) {

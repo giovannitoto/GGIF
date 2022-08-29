@@ -2,6 +2,7 @@
 // #include <Rmath.h>
 #include <RcppArmadillo.h>
 using namespace Rcpp;
+// [[Rcpp::depends(RcppArmadillo)]]
 
 //' Sample from a truncated normal distribution. Samples are drawn
 //' componentwise, so each component of the vector is allowed its own
@@ -18,7 +19,6 @@ using namespace Rcpp;
 //'
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
-// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 arma::mat truncnorm_lg(arma::mat y_lower, arma::mat y_upper,
                        arma::mat mu, arma::vec sigma, arma::mat u_rand){

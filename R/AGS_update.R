@@ -2,17 +2,17 @@
 
 #' Update b_mu in the Adaptive Gibbs Sampler
 #'
-#' @param X DA SCRIVERE
-#' @param prec_mu DA SCRIVERE
-#' @param prec_b DA SCRIVERE
-#' @param mu DA SCRIVERE
-#' @param q DA SCRIVERE
-#' @param c DA SCRIVERE
+#' @param X A pxq matrix.
+#' @param prec_mu A positive number.
+#' @param prec_b A positive number.
+#' @param mu A pxc matrix.
+#' @param q An integer.
+#' @param c An integer.
 #'
 #' @return A qxc matrix.
 #'
 #' @importFrom stats rnorm
-update_b_mu <- function(X, prec_mu, prec_b, mu, q, c) {
+update_b_mu_R <- function(X, prec_mu, prec_b, mu, q, c) {
   Trsg <- X * prec_mu
   if(q > 1) {
     Vgmbeta1 <- base::diag(prec_b, q) + crossprod(Trsg, X)
@@ -49,9 +49,9 @@ update_b_mu <- function(X, prec_mu, prec_b, mu, q, c) {
 #' @return A 1xc matrix.
 #'
 #' @importFrom stats rnorm
-update_mu <- function(j, Qbet, W, Z_res, ps, b_mu, Xcov, c) {
+update_mu_R <- function(j, Qbet, W, Z_res, ps, b_mu, Xcov, c) {
   Lbet <- t(chol(Qbet))
-  bbet <- (t(W) %*% Z_res[, j]) + ps[j] * crossprod(b_mu, t(Xcov)[, j])
+  bbet <- t(W) %*% Z_res[, j] + ps[j] * crossprod(b_mu, t(Xcov)[, j])
   # mean
   vbet <- forwardsolve(Lbet, bbet)
   mbet <- backsolve(t(Lbet), vbet)
@@ -74,7 +74,7 @@ update_mu <- function(j, Qbet, W, Z_res, ps, b_mu, Xcov, c) {
 #' @return A nxk matrix.
 #'
 #' @importFrom stats rnorm
-update_eta <- function(Lambda, ps, k, Z, n) {
+update_eta_R <- function(Lambda, ps, k, Z, n) {
   Lmsg <- Lambda * ps
   Veta1 <- base::diag(k) + crossprod(Lmsg, Lambda)
   eigs <- eigen(Veta1)
@@ -105,7 +105,7 @@ update_eta <- function(Lambda, ps, k, Z, n) {
 #' @return A qx1 matrix.
 #'
 #' @importFrom stats rnorm
-update_beta <- function(h, Xcov, Dt, Bh_1, Phi_L, q) {
+update_beta_R <- function(h, Xcov, Dt, Bh_1, Phi_L, q) {
   Qbeta <- t(Dt[, h] * Xcov) %*% Xcov + Bh_1
   bbeta <- crossprod(Xcov, (Phi_L[, h] - 0.5))
   Lbeta <- t(chol(Qbeta))
@@ -133,7 +133,7 @@ update_beta <- function(h, Xcov, Dt, Bh_1, Phi_L, q) {
 #' @return A 1xk matrix.
 #'
 #' @importFrom stats rnorm
-update_Lambda_star <- function(j, etarho, Phi, Plam, ps, Z, k) {
+update_Lambda_star_R <- function(j, etarho, Phi, Plam, ps, Z, k) {
   etaj <- t(etarho * Phi[j,])
   eta2 <- crossprod(etaj)
   Qlam <- Plam + ps[j] * eta2
@@ -163,12 +163,12 @@ update_Lambda_star <- function(j, etarho, Phi, Plam, ps, Z, k) {
 #' @param k DA SCRIVERE
 #' @param w DA SCRIVERE
 #'
-#' @return A integer in 1, ..., k.
+#' @return An integer in 1, ..., k.
 #'
 #' @importFrom stats dnorm rmultinom
-update_d <- function(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w) {
+update_d_R <- function(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w) {
   phirho <- Phi[rep(1:p, each = n), -h] * sqrt(rho[-h])
-  muijh0 <- rowSums(etalambdastar[,-h] * phirho)
+  muijh0 <- rowSums(etalambdastar[, -h] * phirho)
   lnorm0 <- sum(dnorm(Z, mean = muijh0, sd = sdy, log=T))
   lnorm1 <- sum(dnorm(Z, mean = muijh0 + etalambdastar[,h] * Phi[rep(1:p, each=n), h], sd = sdy, log=T))
   # adjust the scale
@@ -198,7 +198,7 @@ update_d <- function(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w) {
 #' @return A pxk matrix.
 #'
 #' @importFrom stats dnorm runif
-update_Phi <- function(rho, logit, p_constant, p, n,
+update_Phi_R <- function(rho, logit, p_constant, p, n,
                        eta, Lambda_star, Phi, Z, sdy) {
   # select active factors
   wr  <- which(rho == 1)
