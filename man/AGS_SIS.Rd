@@ -96,5 +96,5 @@ A list.
 Implementation in C++ of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
 }
 \seealso{
-\code{\link{update_b_mu_R}}, \code{\link{update_mu}}, \code{\link{update_eta_R}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
+\code{\link{update_bmu}}, \code{\link{update_mu}}, \code{\link{update_eta}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
 }

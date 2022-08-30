@@ -33,7 +33,7 @@
 #'
 #' @return A list.
 #'
-#' @seealso \code{\link{update_b_mu_R}}, \code{\link{update_mu}}, \code{\link{update_eta_R}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
+#' @seealso \code{\link{update_bmu}}, \code{\link{update_mu}}, \code{\link{update_eta}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
 #'
 #' @importFrom stats formula model.matrix plogis rbeta rbinom rgamma rnorm runif
 #'
@@ -273,7 +273,7 @@ AGS_SIS <- function(Y,
     if(!is.null(W)) {
       # ---------------------------------------------------------------------- #
       # 2 - update b_mu
-      b_mu <- update_b_mu_R(X, prec_mu, prec_b, mu, q, c)
+      b_mu <- update_bmu(X, prec_mu, prec_b, mu, q, c)
       # ---------------------------------------------------------------------- #
       # 3 - update mu
       Z_res <- Z - tcrossprod(eta, Lambda)
@@ -291,7 +291,7 @@ AGS_SIS <- function(Y,
       # ---------------------------------------------------------------------- #
     }
     # 4 - update eta
-    eta <- update_eta_R(Lambda, ps, k, Z, n)
+    eta <- update_eta(Lambda, ps, k, Z, n)
     # ------------------------------------------------------------------------ #
     # 5 - update Sigma
     Z_res <- Z - tcrossprod(eta, Lambda)
@@ -320,7 +320,7 @@ AGS_SIS <- function(Y,
     # Lambda_star <- t(sapply(1:p, update_Lambda_star, etarho=etarho, Phi=Phi,
     #                         Plam=Plam, ps=ps, Z=Z, k=k))
     for (j in 1:p) {
-      Lambda_star[j, ] <- update_Lambda_star_R(j, etarho, Phi, Plam, ps, Z, k)
+      Lambda_star[j, ] <- update_Lambda_star(j, etarho, Phi, Plam, ps, Z, k)
     }
     Lambda <- t(t(Lambda_star) * sqrt(rho)) * Phi
     # ------------------------------------------------------------------------ #

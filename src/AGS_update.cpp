@@ -4,13 +4,13 @@ using namespace Rcpp;
 
 /* -------------------------------------------------------------------------- */
 // Functions in this file:
-//  - update_bmu         : DA CONTROLLARE (eigenvectors diversi, resto oke)
-//  - update_mu          : oke
-//  - update_eta         : DA CONTROLLARE (eigenvectors diversi)
-//  - update_beta        : oke
-//  - update_Lambda_star : oke
-//  - update_d           : oke
-//  - update_Phi         : oke
+//  - update_bmu
+//  - update_mu
+//  - update_eta
+//  - update_beta
+//  - update_Lambda_star
+//  - update_d
+//  - update_Phi
 /* -------------------------------------------------------------------------- */
 
 //' Update b_mu in the Adaptive Gibbs Sampler
@@ -29,6 +29,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
                            arma::mat mu, int q, int c) {
+  int i, j;
   arma::mat Trsg = X * prec_mu;
   arma::mat Vgmbeta1(q, q);
   if (q > 1) {
@@ -39,10 +40,16 @@ arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
   arma::vec eigval;
   arma::mat eigvec;
   arma::eig_sym(eigval, eigvec, Vgmbeta1);
-  // eigval = arma::reverse(eigval);
-  // eigvec = arma::fliplr(eigvec);
+  eigval = arma::reverse(eigval);
+  eigvec = arma::fliplr(eigvec);
+  // ---------------------------------------------------------------------------
+  // multiply an eigenvector by -1 if its first element is negative
+  for (j = 0; j < q; j++) {
+    eigvec.col(j) *= arma::sign(eigvec(0, j));
+  }
+  // ---------------------------------------------------------------------------
   arma::mat Tmat(q, q);
-  if (arma::max(eigval) < 0.000001) {
+  if (arma::min(eigval) > 0.000001) {
     Tmat = trans(eigvec.each_row() % trans(sqrt(eigval)));
   } else {
     Tmat = arma::chol(Vgmbeta1);
@@ -50,10 +57,15 @@ arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
   arma::mat Q;
   arma::mat R;
   arma::qr(Q, R, Tmat);
+  // ---------------------------------------------------------------------------
+  // https://www.mathworks.com/matlabcentral/answers/83798-sign-differences-in-qr-decomposition
+  // enforce positive diagonals of R
+  R = arma::diagmat(arma::sign(R.diag())) * R;
+  // ---------------------------------------------------------------------------
   arma::mat S = arma::inv(R);
   arma::mat M(c, q);
-  for (int j = 0; j < q; j++) {
-    for (int i = 0; i < c; i++) {
+  for (j = 0; j < q; j++) {
+    for (i = 0; i < c; i++) {
       M(i, j) = R::rnorm(0, 1);
     }
   }
@@ -112,15 +124,22 @@ arma::mat update_mu(int j, arma::mat Qbet, arma::mat W, arma::mat Z_res,
 //'
 // [[Rcpp::export]]
 arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) {
-  arma::mat Lmsg = Lambda * ps;
+  int i, j;
+  arma::mat Lmsg = Lambda.each_col() % ps;
   arma::mat Veta1 = arma::diagmat(arma::ones(k)) + trans(Lmsg) * Lambda;
   arma::vec eigval;
   arma::mat eigvec;
   arma::eig_sym(eigval, eigvec, Veta1);
-  // eigval = arma::reverse(eigval);
-  // eigvec = arma::fliplr(eigvec);
+  eigval = arma::reverse(eigval);
+  eigvec = arma::fliplr(eigvec);
+  // ---------------------------------------------------------------------------
+  // multiply an eigenvector by -1 if its first element is negative
+  for (j = 0; j < k; j++) {
+    eigvec.col(j) *= arma::sign(eigvec(0, j));
+  }
+  // ---------------------------------------------------------------------------
   arma::mat Tmat(k, k);
-  if (arma::max(eigval) < 0.000001) {
+  if (arma::min(eigval) > 0.000001) {
     Tmat = trans(eigvec.each_row() % trans(sqrt(eigval)));
   } else {
     Tmat = arma::chol(Veta1);
@@ -128,10 +147,15 @@ arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) 
   arma::mat Q;
   arma::mat R;
   arma::qr(Q, R, Tmat);
+  // ---------------------------------------------------------------------------
+  // https://www.mathworks.com/matlabcentral/answers/83798-sign-differences-in-qr-decomposition
+  // enforce positive diagonals of R
+  R = arma::diagmat(arma::sign(R.diag())) * R;
+  // ---------------------------------------------------------------------------
   arma::mat S = arma::inv(R);
   arma::mat M(n, k);
-  for (int j = 0; j < k; j++) {
-    for (int i = 0; i < n; i++) {
+  for (j = 0; j < k; j++) {
+    for (i = 0; i < n; i++) {
       M(i, j) = R::rnorm(0, 1);
     }
   }
@@ -281,6 +305,7 @@ int update_d(int h, arma::mat Phi, int p, int n, arma::vec rho,
 //' @param p An integer.
 //' @param n An integer.
 //' @param eta A nxk matrix.
+//' @param lambdastar A pxk matrix.
 //' @param Phi A pxk matrix.
 //' @param Z A nxp matrix.
 //' @param sdy A nxp matrix.

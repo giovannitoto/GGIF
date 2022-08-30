@@ -19,6 +19,8 @@ update_Phi(rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, sdy, k)
 
 \item{eta}{A nxk matrix.}
 
+\item{lambdastar}{A pxk matrix.}
+
 \item{Phi}{A pxk matrix.}
 
 \item{Z}{A nxp matrix.}

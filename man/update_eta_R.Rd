@@ -9,13 +9,13 @@ update_eta_R(Lambda, ps, k, Z, n)
 \arguments{
 \item{Lambda}{A pxk matrix.}
 
-\item{ps}{DA SCRIVERE}
+\item{ps}{A p-dimensional vector.}
 
-\item{k}{Number of columns of eta.}
+\item{k}{An integer.}
 
 \item{Z}{A nxp matrix.}
 
-\item{n}{Number of rows of eta.}
+\item{n}{An integer.}
 }
 \value{
 A nxk matrix.

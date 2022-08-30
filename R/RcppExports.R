@@ -118,6 +118,7 @@ update_d <- function(h, Phi, p, n, rho, eta, lambdastar, Z, sdy, k, w) {
 #' @param p An integer.
 #' @param n An integer.
 #' @param eta A nxk matrix.
+#' @param lambdastar A pxk matrix.
 #' @param Phi A pxk matrix.
 #' @param Z A nxp matrix.
 #' @param sdy A nxp matrix.
