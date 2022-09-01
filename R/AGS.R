@@ -269,7 +269,7 @@ AGS_SIS <- function(Y,
     n_unif <- matrix(runif(n * p), nrow = n, ncol = p)
     Z <- truncnorm_lg(y_lower = log(a_y), y_upper = log(a_yp1),
                       mu = Zmean, sigma = 1 / sqrt(ps), u_rand = n_unif)
-
+    # ------------------------------------------------------------------------ #
     if(!is.null(W)) {
       # ---------------------------------------------------------------------- #
       # 2 - update b_mu
@@ -282,10 +282,10 @@ AGS_SIS <- function(Y,
       } else {
         Qbet <- prec_mu + crossprod(W)
       }
-      # mu <- t(sapply(1:p, update_mu, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
+      # mu <- t(sapply(1:p - 1, update_mu, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
       #                b_mu=b_mu, Xcov=X, c=c))
       for(j in 1:p) {
-        mu[j, ] <- update_mu(j, Qbet, W, Z_res, ps, b_mu, X, c)
+        mu[j, ] <- update_mu(j - 1, Qbet, W, Z_res, ps, b_mu, X, c)
       }
       Z <- Z - tcrossprod(W, mu)
       # ---------------------------------------------------------------------- #
@@ -310,26 +310,27 @@ AGS_SIS <- function(Y,
     # 6.4 Update beta_h
     Bh_1 <- diag(rep(sd_beta^2, q) ^ {-1})
     for(h in 1:k) {
-      Beta[, h] <- update_beta(h, X, Dt, Bh_1, Phi_L, q)
+      Beta[, h] <- update_beta(h - 1, X, Dt, Bh_1, Phi_L, q)
     }
-    # Beta <- sapply(1:k, update_beta, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
+    # Beta <- sapply(1:k - 1, update_beta, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
     # if(q==1) Beta <- matrix(Beta, nrow=1, ncol=k)
     # ------------------------------------------------------------------------ #
     # 7 - update Lambda and Lambda_star
     etarho <- t(eta) * rho
-    # Lambda_star <- t(sapply(1:p, update_Lambda_star, etarho=etarho, Phi=Phi,
+    # Lambda_star <- t(sapply(1:p - 1, update_Lambda_star, etarho=etarho, Phi=Phi,
     #                         Plam=Plam, ps=ps, Z=Z, k=k))
     for (j in 1:p) {
-      Lambda_star[j, ] <- update_Lambda_star(j, etarho, Phi, Plam, ps, Z, k)
+      Lambda_star[j, ] <- update_Lambda_star(j - 1, etarho, Phi, Plam, ps, Z, k)
     }
     Lambda <- t(t(Lambda_star) * sqrt(rho)) * Phi
     # ------------------------------------------------------------------------ #
     # 8.1 - update d
-    sdy <- matrix(rep(sqrt(1/ps), n), n, p, byrow = TRUE)
-    # d <- sapply(1:k, function(h) update_d, Phi=Phi, p=p, n=n, rho=rho,
+    sdy <- matrix(rep(sqrt(1 / ps), n), n, p, byrow = TRUE)
+    # d <- sapply(1:k - 1, function(h) update_d, Phi=Phi, p=p, n=n, rho=rho,
     #             eta=eta, lambdastar=Lambda_star, Z=Z, sdy=sdy, k=k, w=w)
+    # d <- d + 1
     for(h in 1:k) {
-      d[h] <- update_d(h, Phi, p, n, rho, eta, Lambda_star, Z, sdy, k, w)
+      d[h] <- 1 + update_d(h - 1, Phi, p, n, rho, eta, Lambda_star, Z, sdy, k, w)
     }
     rho <- rep(1, k)
     rho[d <= seq(1, k)] <- 0
