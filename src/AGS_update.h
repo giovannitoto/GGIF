@@ -1,4 +1,5 @@
 #include <RcppArmadillo.h>
+#include "helper_functions.h"
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 
@@ -29,7 +30,6 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
                            arma::mat mu, int q, int c) {
-  int i, j;
   arma::mat Trsg = X * prec_mu;
   arma::mat Vgmbeta1(q, q);
   if (q > 1) {
@@ -44,9 +44,9 @@ arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
   eigvec = arma::fliplr(eigvec);
   // ---------------------------------------------------------------------------
   // multiply an eigenvector by -1 if its first element is negative
-  for (j = 0; j < q; j++) {
-    eigvec.col(j) *= arma::sign(eigvec(0, j));
-  }
+  // for (int j = 0; j < q; j++) {
+  //   eigvec.col(j) *= arma::sign(eigvec(0, j));
+  // }
   // ---------------------------------------------------------------------------
   arma::mat Tmat(q, q);
   if (arma::min(eigval) > 0.000001) {
@@ -60,16 +60,10 @@ arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
   // ---------------------------------------------------------------------------
   // https://www.mathworks.com/matlabcentral/answers/83798-sign-differences-in-qr-decomposition
   // enforce positive diagonals of R
-  R = arma::diagmat(arma::sign(R.diag())) * R;
+  // R = arma::diagmat(arma::sign(R.diag())) * R;
   // ---------------------------------------------------------------------------
   arma::mat S = arma::inv(R);
-  arma::mat M(c, q);
-  for (j = 0; j < q; j++) {
-    for (i = 0; i < c; i++) {
-      M(i, j) = R::rnorm(0, 1);
-    }
-  }
-  arma::mat b_mu = trans(trans(mu) * Trsg * S * trans(S) + M * trans(S));
+  arma::mat b_mu = trans(trans(mu) * Trsg * S * trans(S) + rnorm_mat(c, q, 0, 1) * trans(S));
   return b_mu;
 }
 
@@ -99,10 +93,7 @@ arma::mat update_mu(int j, arma::mat Qbet, arma::mat W, arma::mat Z_res,
   arma::mat vbet = solve(arma::trimatl(Lbet), bbet);
   arma::mat mbet = solve(arma::trimatu(trans(Lbet)), vbet);
   // var
-  arma::vec zbet(c);
-  for (int i = 0; i < c; i++) {
-    zbet(i) = R::rnorm(0, 1);
-  }
+  arma::vec zbet = rnorm_vec(c, 0, 1);
   arma::mat ybet = solve(trimatu(trans(Lbet)), zbet);
   arma::mat muj = trans(ybet + mbet);
   return muj;
@@ -124,9 +115,13 @@ arma::mat update_mu(int j, arma::mat Qbet, arma::mat W, arma::mat Z_res,
 //'
 // [[Rcpp::export]]
 arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) {
-  int i, j;
   arma::mat Lmsg = Lambda.each_col() % ps;
-  arma::mat Veta1 = arma::diagmat(arma::ones(k)) + trans(Lmsg) * Lambda;
+  arma::mat Veta1(k, k);
+  if (k > 1) {
+    Veta1 = arma::diagmat(arma::ones(k)) + trans(Lmsg) * Lambda;
+  } else {
+    Veta1 = 1 + trans(Lmsg) * Lambda;
+  }
   arma::vec eigval;
   arma::mat eigvec;
   arma::eig_sym(eigval, eigvec, Veta1);
@@ -134,9 +129,9 @@ arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) 
   eigvec = arma::fliplr(eigvec);
   // ---------------------------------------------------------------------------
   // multiply an eigenvector by -1 if its first element is negative
-  for (j = 0; j < k; j++) {
-    eigvec.col(j) *= arma::sign(eigvec(0, j));
-  }
+  // for (int j = 0; j < k; j++) {
+  //   eigvec.col(j) *= arma::sign(eigvec(0, j));
+  // }
   // ---------------------------------------------------------------------------
   arma::mat Tmat(k, k);
   if (arma::min(eigval) > 0.000001) {
@@ -150,16 +145,10 @@ arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) 
   // ---------------------------------------------------------------------------
   // https://www.mathworks.com/matlabcentral/answers/83798-sign-differences-in-qr-decomposition
   // enforce positive diagonals of R
-  R = arma::diagmat(arma::sign(R.diag())) * R;
+  // R = arma::diagmat(arma::sign(R.diag())) * R;
   // ---------------------------------------------------------------------------
   arma::mat S = arma::inv(R);
-  arma::mat M(n, k);
-  for (j = 0; j < k; j++) {
-    for (i = 0; i < n; i++) {
-      M(i, j) = R::rnorm(0, 1);
-    }
-  }
-  arma::mat eta = Z * Lmsg * S * trans(S) + M * trans(S);
+  arma::mat eta = Z * Lmsg * S * trans(S) + rnorm_mat(n, k, 0, 1) * trans(S);
   return eta;
 }
 
@@ -188,10 +177,7 @@ arma::mat update_beta(int h, arma::mat Xcov, arma::mat Dt,
   arma::mat vbeta = solve(trimatl(Lbeta), bbeta);
   arma::mat mbeta = solve(trimatu(trans(Lbeta)), vbeta);
   // var
-  arma::vec zbeta(q);
-  for (int i = 0; i < q; i++) {
-    zbeta(i) = R::rnorm(0, 1);
-  }
+  arma::vec zbeta = rnorm_vec(q, 0, 1);
   arma::mat ybeta = solve(trimatu(trans(Lbeta)), zbeta);
   arma::mat betah = trans(ybeta + mbeta);
   return betah;
@@ -224,10 +210,7 @@ arma::mat update_Lambda_star(int j, arma::mat etarho, arma::mat Phi,
   arma::mat vlam = solve(trimatl(Llam), blam);
   arma::mat mlam = solve(trimatu(trans(Llam)), vlam);
   // var
-  arma::vec zlam(k);
-  for (int i = 0; i < k; i++) {
-    zlam(i) = R::rnorm(0, 1);
-  }
+  arma::vec zlam = rnorm_vec(k, 0, 1);
   arma::mat ylam = solve(trimatu(trans(Llam)), zlam);
   arma::mat lambda_starj = trans(ylam + mlam);
   return lambda_starj;
@@ -266,10 +249,10 @@ int update_d(int h, arma::mat Phi, int p, int n, arma::vec rho,
       for (l = 0; l < k; l++) {
         muijh += sqrt(rho(l) * Phi(j, l)) * lambdastar(j, l) * eta(i, l);
       }
-      lnorm0 += std::log(R::dnorm(Z(i, j), muijh, sdy(i, j), FALSE));
+      lnorm0 += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
       // update mean
       muijh += Phi(j, h) * lambdastar(j, h) * eta(i, h);
-      lnorm1 += std::log(R::dnorm(Z(i, j), muijh, sdy(i, j), FALSE));
+      lnorm1 += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
     }
   }
   // adjust the scale
@@ -284,11 +267,11 @@ int update_d(int h, arma::mat Phi, int p, int n, arma::vec rho,
     prob_h(i) += lnorm1;
   }
   prob_h = exp(prob_h);
-  prob_h = prob_h / sum(prob_h);
-  if (sum(prob_h) == 0) {
+  if (sum(prob_h) == 0.0) {
     prob_h = rep(0, k);
-    prob_h[k] = 1;
+    prob_h(k - 1) = 1.0;
   }
+  prob_h = prob_h / sum(prob_h);
   // draw d from a multinomial distribution
   Rcpp::IntegerVector d(k);
   R::rmultinom(1, prob_h.begin(), k, d.begin());
@@ -322,7 +305,7 @@ arma::mat update_Phi(arma::vec rho, arma::mat logit, double p_constant,
   // define variables
   int i, j, l, h;
   arma::uword f;
-  arma::vec p_phi0, p_phi1, p_phi_sum, lnorm0, lnorm1;
+  arma::vec p_phi0(p), p_phi1(p), p_phi_sum(p), lnorm0(p), lnorm1(p);
   arma::uvec wr0 = find(rho == 0);
   arma::uvec wr1 = find(rho == 1);
   // update for inactive factors
@@ -348,10 +331,10 @@ arma::mat update_Phi(arma::vec rho, arma::mat logit, double p_constant,
         for (l = 0; l < k; l++) {
             muijh += sqrt(rho(l) * Phi(j, l)) * lambdastar(j, l) * eta(i, l);
         }
-        lnorm0(j) += std::log(R::dnorm(Z(i, j), muijh, sdy(i, j), FALSE));
+        lnorm0(j) += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
         // update mean
         muijh += rho(h) * lambdastar(j, ih) * eta(i, ih);
-        lnorm1(j) += std::log(R::dnorm(Z(i, j), muijh, sdy(i, j), FALSE));
+        lnorm1(j) += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
       }
       // adjust the scale
       double mlnorm = std::max(lnorm0(j), lnorm1(j));

@@ -11,6 +11,65 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// Rcpp_AGS_SIS
+Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1, double a_theta, arma::mat Beta, double bs, double b0, double b1, int burn, arma::mat b_mu, double b_theta, int c, arma::vec d, arma::mat eta, int k, int kmax, int kstar, arma::mat Lambda, arma::mat Lambda_star, arma::mat logit, arma::mat mu, int n, int nrun, Rcpp::List out, int p, arma::mat Phi, arma::mat Plam, double prec_b, double prec_mu, arma::mat pred, arma::vec prob, arma::vec ps, double p_constant, int q, arma::vec rho, double sd_b, double sd_beta, double sd_mu, int sp, int start_adapt, int thin, arma::vec uu, arma::vec v, bool verbose, arma::vec w, arma::mat W, bool Wnull, arma::mat X);
+RcppExport SEXP _GGIF_Rcpp_AGS_SIS(SEXP alphaSEXP, SEXP asSEXP, SEXP a_ySEXP, SEXP a_yp1SEXP, SEXP a_thetaSEXP, SEXP BetaSEXP, SEXP bsSEXP, SEXP b0SEXP, SEXP b1SEXP, SEXP burnSEXP, SEXP b_muSEXP, SEXP b_thetaSEXP, SEXP cSEXP, SEXP dSEXP, SEXP etaSEXP, SEXP kSEXP, SEXP kmaxSEXP, SEXP kstarSEXP, SEXP LambdaSEXP, SEXP Lambda_starSEXP, SEXP logitSEXP, SEXP muSEXP, SEXP nSEXP, SEXP nrunSEXP, SEXP outSEXP, SEXP pSEXP, SEXP PhiSEXP, SEXP PlamSEXP, SEXP prec_bSEXP, SEXP prec_muSEXP, SEXP predSEXP, SEXP probSEXP, SEXP psSEXP, SEXP p_constantSEXP, SEXP qSEXP, SEXP rhoSEXP, SEXP sd_bSEXP, SEXP sd_betaSEXP, SEXP sd_muSEXP, SEXP spSEXP, SEXP start_adaptSEXP, SEXP thinSEXP, SEXP uuSEXP, SEXP vSEXP, SEXP verboseSEXP, SEXP wSEXP, SEXP WSEXP, SEXP WnullSEXP, SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type as(asSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type a_y(a_ySEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type a_yp1(a_yp1SEXP);
+    Rcpp::traits::input_parameter< double >::type a_theta(a_thetaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Beta(BetaSEXP);
+    Rcpp::traits::input_parameter< double >::type bs(bsSEXP);
+    Rcpp::traits::input_parameter< double >::type b0(b0SEXP);
+    Rcpp::traits::input_parameter< double >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< int >::type burn(burnSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type b_mu(b_muSEXP);
+    Rcpp::traits::input_parameter< double >::type b_theta(b_thetaSEXP);
+    Rcpp::traits::input_parameter< int >::type c(cSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type eta(etaSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type kmax(kmaxSEXP);
+    Rcpp::traits::input_parameter< int >::type kstar(kstarSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Lambda_star(Lambda_starSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type logit(logitSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type nrun(nrunSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type out(outSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Phi(PhiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Plam(PlamSEXP);
+    Rcpp::traits::input_parameter< double >::type prec_b(prec_bSEXP);
+    Rcpp::traits::input_parameter< double >::type prec_mu(prec_muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type pred(predSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type prob(probSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ps(psSEXP);
+    Rcpp::traits::input_parameter< double >::type p_constant(p_constantSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type sd_b(sd_bSEXP);
+    Rcpp::traits::input_parameter< double >::type sd_beta(sd_betaSEXP);
+    Rcpp::traits::input_parameter< double >::type sd_mu(sd_muSEXP);
+    Rcpp::traits::input_parameter< int >::type sp(spSEXP);
+    Rcpp::traits::input_parameter< int >::type start_adapt(start_adaptSEXP);
+    Rcpp::traits::input_parameter< int >::type thin(thinSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type uu(uuSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type w(wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type W(WSEXP);
+    Rcpp::traits::input_parameter< bool >::type Wnull(WnullSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(Rcpp_AGS_SIS(alpha, as, a_y, a_yp1, a_theta, Beta, bs, b0, b1, burn, b_mu, b_theta, c, d, eta, k, kmax, kstar, Lambda, Lambda_star, logit, mu, n, nrun, out, p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant, q, rho, sd_b, sd_beta, sd_mu, sp, start_adapt, thin, uu, v, verbose, w, W, Wnull, X));
+    return rcpp_result_gen;
+END_RCPP
+}
 // update_bmu
 arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b, arma::mat mu, int q, int c);
 RcppExport SEXP _GGIF_update_bmu(SEXP XSEXP, SEXP prec_muSEXP, SEXP prec_bSEXP, SEXP muSEXP, SEXP qSEXP, SEXP cSEXP) {
@@ -135,6 +194,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_pgdraw
+NumericVector rcpp_pgdraw(NumericVector b, NumericVector c);
+RcppExport SEXP _GGIF_rcpp_pgdraw(SEXP bSEXP, SEXP cSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type b(bSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type c(cSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_pgdraw(b, c));
+    return rcpp_result_gen;
+END_RCPP
+}
+// samplepg
+double samplepg(double z);
+RcppExport SEXP _GGIF_samplepg(SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(samplepg(z));
+    return rcpp_result_gen;
+END_RCPP
+}
 // truncnorm_lg
 arma::mat truncnorm_lg(arma::mat y_lower, arma::mat y_upper, arma::mat mu, arma::vec sigma, arma::mat u_rand);
 RcppExport SEXP _GGIF_truncnorm_lg(SEXP y_lowerSEXP, SEXP y_upperSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP u_randSEXP) {
@@ -152,6 +234,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_GGIF_Rcpp_AGS_SIS", (DL_FUNC) &_GGIF_Rcpp_AGS_SIS, 49},
     {"_GGIF_update_bmu", (DL_FUNC) &_GGIF_update_bmu, 6},
     {"_GGIF_update_mu", (DL_FUNC) &_GGIF_update_mu, 8},
     {"_GGIF_update_eta", (DL_FUNC) &_GGIF_update_eta, 5},
@@ -159,6 +242,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_GGIF_update_Lambda_star", (DL_FUNC) &_GGIF_update_Lambda_star, 7},
     {"_GGIF_update_d", (DL_FUNC) &_GGIF_update_d, 11},
     {"_GGIF_update_Phi", (DL_FUNC) &_GGIF_update_Phi, 11},
+    {"_GGIF_rcpp_pgdraw", (DL_FUNC) &_GGIF_rcpp_pgdraw, 2},
+    {"_GGIF_samplepg", (DL_FUNC) &_GGIF_samplepg, 1},
     {"_GGIF_truncnorm_lg", (DL_FUNC) &_GGIF_truncnorm_lg, 5},
     {NULL, NULL, 0}
 };

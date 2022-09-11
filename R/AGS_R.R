@@ -257,7 +257,7 @@ AGS_SIS_R <- function(Y,
   t0 <- proc.time()
   # algorithm starts here
   for (i in 1:nrun) {
-    if(verbose == TRUE && i %% 10 == 0) cat(i, ":", k, "active factors\n")
+    if(verbose == TRUE && i %% 50 == 0) cat(i, ":", k, "active factors\n")
     # ------------------------------------------------------------------------ #
     # 1 - update Z
     if(is.null(W)) {

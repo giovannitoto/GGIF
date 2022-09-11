@@ -22,9 +22,9 @@ update_b_mu_R <- function(X, prec_mu, prec_b, mu, q, c) {
   eigs <- eigen(Vgmbeta1)
   # ----------------------------------------------------------------------------
   # multiply an eigenvector by -1 if its first element is negative
-  for (h in 1:q) {
-    eigs$vectors[, h] <-  eigs$vectors[, h] * sign(eigs$vectors[1, h])
-  }
+  # for (h in 1:q) {
+  #   eigs$vectors[, h] <-  eigs$vectors[, h] * sign(eigs$vectors[1, h])
+  # }
   # ----------------------------------------------------------------------------
   if(all(eigs$values > 1e-6)) {
     Tmat <- sqrt(eigs$values) * t(eigs$vectors)
@@ -35,7 +35,7 @@ update_b_mu_R <- function(X, prec_mu, prec_b, mu, q, c) {
   # ----------------------------------------------------------------------------
   # https://www.mathworks.com/matlabcentral/answers/83798-sign-differences-in-qr-decomposition
   # enforce positive diagonals of R
-  R <- diag(sign(diag(R))) %*% R
+  # R <- diag(sign(diag(R))) %*% R
   # ----------------------------------------------------------------------------
   S <- solve(R)
   Vgmbeta <- S %*% t(S)
@@ -87,13 +87,17 @@ update_mu_R <- function(j, Qbet, W, Z_res, ps, b_mu, Xcov, c) {
 #' @importFrom stats rnorm
 update_eta_R <- function(Lambda, ps, k, Z, n) {
   Lmsg <- Lambda * ps
-  Veta1 <- base::diag(k) + crossprod(Lmsg, Lambda)
+  if(k > 1) {
+    Veta1 <- base::diag(k) + crossprod(Lmsg, Lambda)
+  } else {
+    Veta1 <- 1 + crossprod(Lmsg, Lambda)
+  }
   eigs <- eigen(Veta1)
   # ----------------------------------------------------------------------------
   # multiply an eigenvector by -1 if its first element is negative
-  for (h in 1:k) {
-    eigs$vectors[, h] <-  eigs$vectors[, h] * sign(eigs$vectors[1, h])
-  }
+  # for (h in 1:k) {
+  #   eigs$vectors[, h] <-  eigs$vectors[, h] * sign(eigs$vectors[1, h])
+  # }
   # ----------------------------------------------------------------------------
   if(all(eigs$values > 1e-6)) {
     Tmat <- sqrt(eigs$values) * t(eigs$vectors)
@@ -104,7 +108,7 @@ update_eta_R <- function(Lambda, ps, k, Z, n) {
   # ----------------------------------------------------------------------------
   # https://www.mathworks.com/matlabcentral/answers/83798-sign-differences-in-qr-decomposition
   # enforce positive diagonals of R
-  R <- diag(sign(diag(R))) %*% R
+  # R <- diag(sign(diag(R))) %*% R
   # ----------------------------------------------------------------------------
   S <- solve(R)
   Veta <- S %*% t(S)

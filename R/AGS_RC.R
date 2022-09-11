@@ -1,6 +1,6 @@
 #' AGS for GIF models with SIS prior (C++)
 #'
-#' Implementation in C++ of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
+#' Implementation in R and C++ of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
 #'
 #' @param Y A nxp matrix of counts.
 #' @param X A pxq matrix of meta-covariates; the variables must be numeric or factors.
@@ -41,23 +41,23 @@
 #' @import RcppArmadillo
 #'
 #' @export
-AGS_SIS <- function(Y,
-                    X = NULL, W = NULL,
-                    seed = 28,
-                    stdx = TRUE, stdw = TRUE,
-                    WFormula = formula("~ ."),
-                    XFormula = formula("~ ."),
-                    kinit = NULL, kmax = NULL, kval = 6,
-                    nrun = 100, burn = round(nrun/4), thin = 1,
-                    start_adapt = 50,
-                    b0 = 1, b1 = 5*10^(-4),
-                    sd_b = 1, sd_mu = 1, sd_beta = 1,
-                    a_theta = 1, b_theta = 1,
-                    as = 1, bs = 1,
-                    p_constant = NULL, alpha,
-                    y_max = Inf,
-                    output = "all",
-                    verbose = TRUE) {
+AGS_SIS_RC <- function(Y,
+                       X = NULL, W = NULL,
+                       seed = 28,
+                       stdx = TRUE, stdw = TRUE,
+                       WFormula = formula("~ ."),
+                       XFormula = formula("~ ."),
+                       kinit = NULL, kmax = NULL, kval = 6,
+                       nrun = 100, burn = round(nrun/4), thin = 1,
+                       start_adapt = 50,
+                       b0 = 1, b1 = 5 * 10^(-4),
+                       sd_b = 1, sd_mu = 1, sd_beta = 1,
+                       a_theta = 1, b_theta = 1,
+                       as = 1, bs = 1,
+                       p_constant = NULL, alpha,
+                       y_max = Inf,
+                       output = "all",
+                       verbose = TRUE) {
   # -------------------------------------------------------------------------- #
   # set seed
   if((length(seed) != 1) | !is.numeric(seed) | (seed != round(seed))) {
@@ -92,15 +92,14 @@ AGS_SIS <- function(Y,
   }
   q <- dim(X)[2]
 
-  Wnull <- is.null(W)
-  if(!Wnull) {
+  if(!is.null(W)) {
     if(n != nrow(W)) {
       stop("'Y' and 'W' not compatible: they must have the same number of rows.")
     }
     if((length(stdw) != 1) | !is.logical(stdw)) {
       stop("'stdw' not valid: it must be 'TRUE' or 'FALSE'.")
     }
-    if(stdw) {
+    if(stdw){
       is.fact.w <- sapply(W, is.factor)
       W[, is.fact.w == FALSE] <-  scale(W[, is.fact.w == FALSE])
       if(is.data.frame(W)) {
@@ -108,9 +107,6 @@ AGS_SIS <- function(Y,
       }
     }
     c <- ncol(W)
-  } else {
-    W <- matrix(1, nrow = 1, ncol = 1)
-    c <- 1
   }
   # -------------------------------------------------------------------------- #
   if(is.null(kinit)) {
@@ -123,8 +119,8 @@ AGS_SIS <- function(Y,
   } else if((length(kmax) != 1) | !is.numeric(kmax) | (kmax != round(kmax)) | (kmax < kinit)) {
     stop("'kmax' not valid: it must be an integer greater than or equal to 'kinit'.")
   }
-  k <- kinit       # number of factors to start with (active and inactive)
-  kstar <- k - 1   # number of active factors
+  k <- kinit                         # number of factors to start with (active and inactive)
+  kstar <- k - 1                     # number of active factors
   # -------------------------------------------------------------------------- #
   if((length(nrun) != 1) | !is.numeric(nrun) | (nrun != round(nrun))) {
     stop("'nrun' not valid: it must be an integer.")
@@ -200,18 +196,14 @@ AGS_SIS <- function(Y,
   # Initialize sigma^-2
   ps <- rgamma(p, as, bs)
   # Initialize the nxp matrix of latent normal variables
-  # Z <- matrix(NA, nrow = n, ncol = p)
+  Z <- matrix(NA, nrow = n, ncol = p)
   # Initialize parameters related to the covariates, if W exists
-  if(!Wnull) {
+  if(!is.null(W)) {
     mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)  # mean coeff of the data
     b_mu <- matrix(rnorm(q * c), nrow = c, ncol = q)          # x effects on mu coeff
     # precision of mu and b_mu
     prec_b  <- 1 / (sd_b)  ^ 2
     prec_mu <- 1 / (sd_mu) ^ 2
-  } else {
-    # not used but necessary to call the C++ function
-    mu <- b_mu <- matrix(1, nrow = 1, ncol = 1)
-    prec_b <- prec_mu <- 0.1
   }
   # Initialize lambda star (pxq)
   Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)  # loading matrix
@@ -248,47 +240,183 @@ AGS_SIS <- function(Y,
   } else {
     output <- intersect(output, valid_outputs)
   }
-  # -------------------------------------------------------------------------- #
-  out <- list()
-  if(!Wnull) {
-    if("mu" %in% output) out["mu"] <- NA
-    if("bmu" %in% output) out["bmu"] <- NA
+  if(!is.null(W)) {
+    if("mu" %in% output) MU <- list()
+    if("bmu" %in% output) BMU <- list()
   }
-  if("beta" %in% output) out["beta"] <- NA
-  if("eta" %in% output) out["eta"] <- NA
-  if("lambda" %in% output) out["lambda"] <- NA
-  if("sigmacol" %in% output) out["sigmacol"] <- NA
-  if("numFactors" %in% output) out["numFactors"] <- NA
-  # -------------------------------------------------------------------------- #
-  # start time
-  t0 <- proc.time()
+  if("beta" %in% output) BETA <- list()
+  if("eta" %in% output) ETA <- list()
+  if("lambda" %in% output) LAMBDA <- list()
+  if("sigmacol" %in% output) sig <- list()
+  if("numFactors" %in% output) K <- rep(NA, sp)
+  if("time" %in% output) runtime <- NULL
   # -------------------------------------------------------------------------- #
   # ADAPTIVE GIBBS SAMPLING
   # -------------------------------------------------------------------------- #
-  out <- Rcpp_AGS_SIS(alpha, as, a_y, a_yp1, a_theta,
-                      Beta, bs, b0, b1, burn, b_mu, b_theta,
-                      c,
-                      d,
-                      eta,
-                      k,  kmax, kstar,
-                      Lambda, Lambda_star, logit,
-                      mu,
-                      n, nrun,
-                      out,
-                      p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant,
-                      q,
-                      rho,
-                      sd_b, sd_beta, sd_mu, sp, start_adapt,
-                      thin,
-                      uu,
-                      v, verbose,
-                      w, W, Wnull,
-                      X)
+  ind <- 1
+  # start time
+  t0 <- proc.time()
+  # algorithm starts here
+  for (i in 1:nrun) {
+    if(verbose == TRUE && i %% 50 == 0) cat(i, ":", k, "active factors\n")
+    # ------------------------------------------------------------------------ #
+    # 1 - update Z
+    if(is.null(W)) {
+      Zmean <- tcrossprod(eta, Lambda)  # eta * t(Lambda)
+    } else {
+      Zmean <- tcrossprod(eta, Lambda) + tcrossprod(W, mu)
+    }
+    n_unif <- matrix(runif(n * p), nrow = n, ncol = p)
+    Z <- truncnorm_lg(y_lower = log(a_y), y_upper = log(a_yp1),
+                      mu = Zmean, sigma = 1 / sqrt(ps), u_rand = n_unif)
+    # ------------------------------------------------------------------------ #
+    if(!is.null(W)) {
+      # ---------------------------------------------------------------------- #
+      # 2 - update b_mu
+      b_mu <- update_bmu(X, prec_mu, prec_b, mu, q, c)
+      # ---------------------------------------------------------------------- #
+      # 3 - update mu
+      Z_res <- Z - tcrossprod(eta, Lambda)
+      if(c > 1) {
+        Qbet <- base::diag(prec_mu, c) + crossprod(W)
+      } else {
+        Qbet <- prec_mu + crossprod(W)
+      }
+      # mu <- t(sapply(1:p - 1, update_mu, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
+      #                b_mu=b_mu, Xcov=X, c=c))
+      for(j in 1:p) {
+        mu[j, ] <- update_mu(j - 1, Qbet, W, Z_res, ps, b_mu, X, c)
+      }
+      Z <- Z - tcrossprod(W, mu)
+      # ---------------------------------------------------------------------- #
+    }
+    # 4 - update eta
+    eta <- update_eta(Lambda, ps, k, Z, n)
+    # ------------------------------------------------------------------------ #
+    # 5 - update Sigma
+    Z_res <- Z - tcrossprod(eta, Lambda)
+    ps <- rgamma(p, as + 0.5 * n, bs + 0.5 * colSums(Z_res ^ 2))
+    # ------------------------------------------------------------------------ #
+    # 6 - update beta
+    pred <- X %*% Beta
+    logit <- plogis(pred)
+    # 6.2 Update phi_L
+    Phi_L <- matrix(1, nrow = p, ncol = k)
+    logit_phi0 <- logit[which(Phi == 0)]
+    which_zero <- which(runif(length(logit_phi0)) < ((1 - logit_phi0) / (1 - logit_phi0 * p_constant)))
+    Phi_L[which(Phi == 0)[which_zero]] <- 0
+    # 6.3 Polya gamma
+    Dt <- matrix(pgdraw::pgdraw(1, pred), nrow = p, ncol = k)
+    # 6.4 Update beta_h
+    Bh_1 <- diag(rep(sd_beta^2, q) ^ {-1})
+    for(h in 1:k) {
+      Beta[, h] <- update_beta(h - 1, X, Dt, Bh_1, Phi_L, q)
+    }
+    # Beta <- sapply(1:k - 1, update_beta, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
+    # if(q==1) Beta <- matrix(Beta, nrow=1, ncol=k)
+    # ------------------------------------------------------------------------ #
+    # 7 - update Lambda and Lambda_star
+    etarho <- t(eta) * rho
+    # Lambda_star <- t(sapply(1:p - 1, update_Lambda_star, etarho=etarho, Phi=Phi,
+    #                         Plam=Plam, ps=ps, Z=Z, k=k))
+    for (j in 1:p) {
+      Lambda_star[j, ] <- update_Lambda_star(j - 1, etarho, Phi, Plam, ps, Z, k)
+    }
+    Lambda <- t(t(Lambda_star) * sqrt(rho)) * Phi
+    # ------------------------------------------------------------------------ #
+    # 8.1 - update d
+    sdy <- matrix(rep(sqrt(1 / ps), n), n, p, byrow = TRUE)
+    # d <- sapply(1:k - 1, function(h) update_d, Phi=Phi, p=p, n=n, rho=rho,
+    #             eta=eta, lambdastar=Lambda_star, Z=Z, sdy=sdy, k=k, w=w)
+    # d <- d + 1
+    for(h in 1:k) {
+      d[h] <- 1 + update_d(h - 1, Phi, p, n, rho, eta, Lambda_star, Z, sdy, k, w)
+    }
+    rho <- rep(1, k)
+    rho[d <= seq(1, k)] <- 0
+    # 8.2
+    Plam <- diag(rgamma(k, a_theta + 0.5 * p, b_theta + 0.5 * colSums(Lambda_star^2)))
+    # 8.3
+    for(h in 1:(k-1)) {
+      v[h] <- rbeta(1, shape1 = 1 + sum(d == h), shape2 = alpha + sum(d > h))
+    }
+    v[k] <- 1
+    w <- v * c(1, cumprod(1 - v[-k]))
+    # ------------------------------------------------------------------------ #
+    # 9 - update Phi
+    pred <- X %*% Beta
+    logit <- plogis(pred)
+    Phi <- update_Phi(rho, logit, p_constant, p, n, eta, Lambda_star, Phi, Z, sdy, k)
+    # ------------------------------------------------------------------------ #
+    # save sampled values (after burn-in period)
+    if((i %% thin == 0) & (i > burn)) {
+      if(!is.null(W)) {
+        if("mu" %in% output) MU[[ind]] <- mu
+        if("bmu" %in% output) BMU[[ind]] <- b_mu
+      }
+      if("beta" %in% output) BETA[[ind]] <- Beta
+      if("eta" %in% output) ETA[[ind]] <- eta
+      if("lambda" %in% output) LAMBDA[[ind]] <- Lambda
+      if("sigmacol" %in% output) sig[[ind]] <- ps
+      if("numFactors" %in% output) K[ind] <- kstar
+      ind <- ind + 1
+    }
+    # ------------------------------------------------------------------------ #
+    # Adaptation
+    if((uu[i] < prob[i]) & (i > start_adapt)) {
+      active <- which(d > seq(1, k))
+      kstar <- length(active)
+      if (kstar < k - 1) {
+        # set truncation to kstar and subset all variables, keeping only active columns
+        k <- kstar + 1
+        eta <- cbind(eta[, active, drop = FALSE], rnorm(n))
+        vartheta_k <- rgamma(1, a_theta, b_theta)
+        Plam <- diag(c(diag(Plam)[active, drop = FALSE], vartheta_k))
+        Lambda_star <- cbind(Lambda_star[, active, drop = FALSE], rnorm(p, 0, sd = sqrt(vartheta_k)))
+        Phi <- cbind(Phi[, active, drop = FALSE], rbinom(p, size = 1, prob = p_constant))
+        rho <- c(rho[active, drop = FALSE], 1)
+        Lambda <- cbind(Lambda[, active, drop = FALSE], Lambda_star[, k] * sqrt(rho[k]) * Phi[, k])
+        Beta <- cbind(Beta[, active, drop = FALSE], rnorm(q, 0, sd = sqrt(sd_beta)))
+        w <- c(w[active, drop = FALSE], 1 - sum(w[active, drop = FALSE]))
+        v <- c(v[active, drop = FALSE], 1)  # just to allocate memory
+        d <- c(d[active, drop = FALSE], k)
+      } else if (k < kmax) {
+        # increase truncation by 1 and extend all variables, sampling from the prior/model
+        k <- k + 1
+        eta <- cbind(eta, rnorm(n))
+        vartheta_k <- rgamma(1, a_theta, b_theta)
+        Plam <- diag(c(diag(Plam), vartheta_k) )
+        Lambda_star <- cbind(Lambda_star, rnorm(p, 0, sd = sqrt(vartheta_k)))
+        Phi <- cbind(Phi, rbinom(p, size = 1, prob = p_constant))
+        rho <- c(rho, 1)
+        Lambda <- cbind(Lambda, Lambda_star[, k] * sqrt(rho[k]) * Phi[, k])
+        Beta <- cbind(Beta, rnorm(q, 0, sd = sqrt(sd_beta)))
+        v[k-1] <- rbeta(1, shape1 = 1, shape2 = alpha)
+        v <- c(v, 1)
+        w <- v * c(1, cumprod(1 - v[-k]))
+        d <- c(d, k)
+      }
+    }
+    # ------------------------------------------------------------------------ #
+  }
+  runtime <- proc.time() - t0
   # -------------------------------------------------------------------------- #
-  out["time"] <- (proc.time() - t0)[1]
+  out <- lapply(output, function(x) {
+    if(!is.null(W)) {
+      if(x == "mu") return(MU)          # coefSamples        : pxc
+      if(x == "bmu") return(BMU)        # bmuCoefSamples     : qxc
+    }
+    if(x == "beta") return(BETA)        # loadSamples        : pxk
+    if(x == "eta") return(ETA)          # shrinkCoefSamples  : qxk
+    if(x == "lambda") return(LAMBDA)    # etaval             : nxk
+    if(x == "sigmacol") return(sig)     # sigmacol           : p
+    if(x == "numFactors") return(K)     # numFactors (kstar) : t
+    if(x == "time") return(runtime[1])  # time               : 1
+  })
+  names(out) <- output
   out[["model_prior"]] <- "SIS"
   out[["Y"]] <- Y                       # data               : nxp
-  if(!Wnull) out[["W"]] <- W            # covariates         : nxc
+  if(!is.null(W)) out[["W"]] <- W       # covariates         : nxc
   out[["X"]] <- X                       # metacovariates     : pxq
   out[["hyperparameters"]] <- list(alpha = alpha, a_theta = a_theta,
                                    b_theta = b_theta, sd_b = sd_b,
