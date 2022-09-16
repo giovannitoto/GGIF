@@ -319,7 +319,6 @@ arma::mat update_Phi(arma::vec rho, arma::mat logit, double p_constant,
     }
   }
   // update for active factors
-  int ih = 0;
   for (f = 0; f < wr1.n_elem; f++) {
     h = wr1(f);
     lnorm0 = arma::zeros(p);
@@ -327,13 +326,13 @@ arma::mat update_Phi(arma::vec rho, arma::mat logit, double p_constant,
     for (j = 0; j < p; j++) {
       for (i = 0; i < n; i++) {
         // initialize mean
-        double muijh = -1 * sqrt(rho(ih) * Phi(j, ih)) * lambdastar(j, ih) * eta(i, ih);
+        double muijh = -1 * rho(h) * Phi(j, h) * lambdastar(j, h) * eta(i, h);
         for (l = 0; l < k; l++) {
-            muijh += sqrt(rho(l) * Phi(j, l)) * lambdastar(j, l) * eta(i, l);
+            muijh += rho(l) * Phi(j, l) * lambdastar(j, l) * eta(i, l);
         }
         lnorm0(j) += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
         // update mean
-        muijh += rho(h) * lambdastar(j, ih) * eta(i, ih);
+        muijh += rho(h) * lambdastar(j, h) * eta(i, h);
         lnorm1(j) += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
       }
       // adjust the scale
