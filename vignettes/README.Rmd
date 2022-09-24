@@ -1,0 +1,101 @@
+---
+title: "Generalized Infinite Factorization models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{README}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+rm(list=ls())
+library(GGIF)
+library(ggplot2)
+```
+
+```{r data}
+Y <- GGIF::Y
+W <- GGIF::W
+X <- GGIF::X
+```
+
+```{r inputs1}
+seed <- 28
+output <- "all"
+verbose <- TRUE
+# 2
+stdx <- TRUE
+stdw <- TRUE
+WFormula <- formula("~ .")
+XFormula <- formula("~ .")
+y_max <- Inf
+# 3
+kinit <- NULL
+kmax <- NULL
+kval <- 6
+# 4
+nrun <- 50
+burn <- round(nrun / 4)
+thin <- 1
+start_adapt <- 10
+# 5
+b0 <- 1; b1 <- 5 * 10^(-4)
+sd_b <- 1; sd_mu <- 1; sd_beta <- 1
+a_theta <- 1; b_theta <- 1
+as <- 1; bs <- 1
+alpha <- 5
+p_constant <- NULL
+```
+
+```{r AGS}
+out_MCMC <- AGS_SIS(Y = Y, X = X, W = W,
+                    seed = seed,
+                    stdx = stdx, stdw = stdw,
+                    WFormula = WFormula,
+                    XFormula = XFormula,
+                    kinit = kinit, kmax = kmax, kval = kval,
+                    nrun = nrun, burn = burn, thin = thin, start_adapt = start_adapt,
+                    b0 = b0, b1 = b1,
+                    sd_b = sd_b, sd_mu = sd_mu, sd_beta = sd_beta,
+                    a_theta = a_theta, b_theta = b_theta,
+                    as = as, bs = bs,
+                    p_constant = p_constant, alpha = alpha,
+                    y_max = y_max, output = output,
+                    verbose = verbose)
+```
+```{r factors}
+cat("Seconds", out_MCMC$time, "\n")
+cat("Minutes", out_MCMC$time / 60, "\n")
+cat("Hours", out_MCMC$time / 60 / 60, "\n")
+```
+```{r numFactors}
+dd <- as.data.frame(cbind(1:length(out_MCMC$numFactors), out_MCMC$numFactors))
+ggplot(data=dd, aes(x=V1, y=V2)) +
+  geom_line(colour = "blue", size = 1.1)+
+  labs(x = "", y = "k")+
+  scale_y_continuous(name="k", breaks = 0:max(dd[,2]),
+                     limit = c(min(dd[,2])-1, max(dd[,2])+1)) +
+  theme_bw() + theme(panel.grid.major.x = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     axis.line = element_line(colour = "black"),
+                     legend.position = "bottom")
+```
+```{r post_proc}
+post_proc <- lposterior(out_MCMC, frac_sampled = 1/2)
+```
+```{r }
+```
+```{r }
+```
+```{r }
+```
+```{r }
+```
+

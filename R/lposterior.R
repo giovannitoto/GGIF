@@ -6,10 +6,10 @@
 #' To speed up computations, it is possible to evaluate only a random fraction of the iterations, using the parameter \code{frac_sampled}, or to define the iterations of interest, using the parameter \code{samples}.
 #'
 #' @param out_MCMC A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.
-#' @param frac_sampled A value in (0,1], which specifies the fraction of the iterations to evaluate. Default is 1.
+#' @param frac_sampled A value in (0,1] specifying the fraction of the iterations to evaluate. Default is 1, that is all the iterations.
 #' @param samples A vector of integers between 1 and the length of the MCMC chain which specifies the iterations to evaluate. Default is all the iterations.
-#' @param columns a string specifying whether to consider only active factors (\code{kstar}) or both active and inactive factors (\code{k}). Default is \code{"k"}.
-#' @param parameters A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"} and \code{"sigmacol"}. Default is \code{all}, which is equivalent to writing \code{c("beta", "eta", "lambda")}.
+#' @param columns A string specifying whether to consider only active factors (\code{"kstar"}) or both active and inactive factors (\code{"k"}). Default is \code{"k"}.
+#' @param parameters A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"beta"}, \code{"eta"}, \code{"lambda"}, \code{"mu"} and \code{"bmu"}. Default is \code{all}, which is equivalent to writing \code{c("beta", "eta", "lambda", "mu", "bmu")}.
 #' @param seed Seed. Default is 28.
 #'
 #' @return A list with the following elements:
@@ -18,13 +18,15 @@
 #' \item \code{lposterior}: log-posterior probabilities of the iterations evaluated by the function.
 #' \item \code{lposterior_max}: maximum log-posterior probability.
 #' \item \code{iteration_max}: index of the iteration in which the log-posterior probability reaches its maximum.
-#' \item \code{beta_max}:
-#' \item \code{eta_max}:
-#' \item \code{lambda_max}
+#' \item \code{beta_max}: value of \eqn{\beta} at \code{iteration_max}.
+#' \item \code{eta_max}: value of \eqn{\eta} at \code{iteration_max}.
+#' \item \code{lambda_max}: value of \eqn{\Lambda} at \code{iteration_max}.
+#' \item \code{mu}: value of \eqn{\mu} at \code{iteration_max}.
+#' \item \code{bmu}: value of \eqn{b_{\mu}} at \code{iteration_max}.
 #' }
-#' If \code{columns="k"}, \code{beta_max}, \code{eta_max} and \code{lambda_max} contain only columns linked to active factors; if \code{columns="kstar"}, they contains columns linked to both active and inactive factors
+#' If \code{columns="k"}, \code{beta_max}, \code{eta_max} and \code{lambda_max} contain only columns linked to active factors; if \code{columns="kstar"}, they contain columns linked to both active and inactive factors
 #'
-#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}. The function \code{\link{lposterior_function}} is used to compute the log-posterior probability of each MCMC iteration.
+#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}. The function \code{\link{lposterior_function}} is used to compute the log-posterior probability of a single MCMC iteration.
 #'
 #' @export
 lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
@@ -33,7 +35,7 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
   set.seed(seed)
   # check whether all necessary variables are available in out_MCMC
   required_variables <- c("Y", "X", "numFactors", "beta", "eta", "lambda",
-                          "sigmacol", "mu", "bmu", "hyperparameters")
+                          "sigmacol", "hyperparameters")
   if(check_list(out_MCMC, required_variables) == FALSE) {
     stop(paste(paste(c(required_variables), collapse = ", "), "must be stored in the MCMC output."))
   }
@@ -44,6 +46,14 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
                                 "sd_beta","as", "bs", "p_constant", "y_max")
   if(check_list(out_MCMC$hyperparameters, required_hyperparameters) == FALSE) {
     stop(paste(paste(c(required_hyperparameters), collapse = ", "), "must be stored in 'out_MCMC$hyperparameters'."))
+  }
+  if("W" %in% names(out_MCMC)) {
+    if(check_list(out_MCMC, c("mu", "bmu")) == FALSE) {
+      stop("If 'W' is stored in the MCMC output, then also 'mu', 'bmu' must be stored in the MCMC output.")
+    }
+    if(check_list(out_MCMC$hyperparameters, c("sd_b", "sd_mu")) == FALSE) {
+      stop("If 'W' is stored in the MCMC output, then also 'sd_b', 'sd_mu' must be stored in the hyperparameters of the MCMC output.")
+    }
   }
   # number of iterations
   t <- length(out_MCMC$numFactors)
@@ -69,7 +79,7 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
     stop("'columns' not valid: it must be 'k' or 'kstar'.")
   }
   # remove invalid strings from 'parameters'
-  valid_parameters <- c("beta", "eta", "lambda")
+  valid_parameters <- c("beta", "eta", "lambda", "mu", "bmu")
   if("all" %in% parameters) {
     parameters <- valid_parameters
   } else {
@@ -77,25 +87,28 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
   }
   # -------------------------------------------------------------------------- #
   # compute the log-posterior probability of each iteration of a MCMC chain
-  lposterior <- unlist(lapply(sampled, lposterior_function, out_MCMC = out_MCMC, columns = columns))
+  lpost <- unlist(lapply(sampled, lposterior_function, out_MCMC = out_MCMC, columns = columns))
   # prepare output
   output <- list(sampled = sampled,
-                 lposterior = lposterior,
-                 lposterior_max = max(lposterior),
-                 iteration_max = sampled[which.max(lposterior)]
+                 lposterior = lpost,
+                 lposterior_max = max(lpost),
+                 iteration_max = sampled[which.max(lpost)]
                 )
   # add beta, eta, lambda to 'output'
-  for (par in parameters) {
+  for (par in intersect(parameters, valid_parameters[1:3])) {
     if(columns == "k") {
       output[[paste(par, "max", sep="_")]] <- out_MCMC[[par]][[output$iteration_max]]
     } else if(columns == "kstar") {
       output[[paste(par, "max", sep="_")]] <- out_MCMC[[par]][[output$iteration_max]][, 1:out_MCMC$numFactors[output$iteration_max]]
     }
   }
+  # add mu, bmu to 'output'
+  for (par in intersect(parameters, valid_parameters[4:5])) {
+    output[[paste(par, "max", sep="_")]] <- out_MCMC[[par]][[output$iteration_max]]
+  }
   return(output)
   # -------------------------------------------------------------------------- #
 }
-
 
 # ---------------------------------------------------------------------------- #
 
@@ -109,7 +122,7 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
 #'
 #' @return A number which is the log-posterior probability of the \code{ind}th iteration of a MCMC chain.
 #'
-#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}.
+#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}. This function is used in \code{\link{lposterior}}.
 #'
 #' @importFrom stats dgamma dnorm plogis rnorm
 lposterior_function <- function(ind, out_MCMC, columns = "k") {

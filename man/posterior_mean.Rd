@@ -2,20 +2,20 @@
 % Please edit documentation in R/posterior_mean.R
 \name{posterior_mean}
 \alias{posterior_mean}
-\title{Compute the posterior mean of one or more parameters}
+\title{Posterior mean}
 \usage{
 posterior_mean(out_MCMC, parameters = "all", columns = "k")
 }
 \arguments{
-\item{out_MCMC}{A list containing the results of the Adaptive Gibbs Sampler.}
+\item{out_MCMC}{A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.}
 
-\item{parameters}{A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{mu}, \code{bmu}, \code{sigmacol}, \code{omega} and \code{omega_inv}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol","omega","omega_inv")}.}
+\item{parameters}{A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"sigmacol"}, \code{"omega"} and \code{"omega_inv"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol", "omega", "omega_inv")}.}
 
-\item{columns}{Default is \code{"k"}.}
+\item{columns}{A string specifying whether to consider only active factors (\code{"kstar"}) or both active and inactive factors (\code{"k"}) for the computation of \code{omega} and \code{omega_inv}. Default is \code{"k"}.}
 }
 \value{
 A list containing the posterior means of the parameters specified in \code{parameters}.
 }
 \description{
-Compute the posterior mean of one or more parameters
+Compute the posterior mean of one or more parameters.
 }

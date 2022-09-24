@@ -346,7 +346,6 @@ arma::mat update_Phi(arma::vec rho, arma::mat logit, double p_constant,
     for (j = 0; j < p; j++) {
       Phi(j, h) = R::runif(0, 1) * p_phi_sum(j) < p_phi1(j);
     }
-    ih += 1;
   }
   return Phi;
 }

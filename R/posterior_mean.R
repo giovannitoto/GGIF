@@ -1,10 +1,12 @@
 # ---------------------------------------------------------------------------- #
 
-#' Compute the posterior mean of one or more parameters
+#' Posterior mean
 #'
-#' @param out_MCMC A list containing the results of the Adaptive Gibbs Sampler.
-#' @param parameters A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{mu}, \code{bmu}, \code{sigmacol}, \code{omega} and \code{omega_inv}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol","omega","omega_inv")}.
-#' @param columns Default is \code{"k"}.
+#' Compute the posterior mean of one or more parameters.
+#'
+#' @param out_MCMC A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.
+#' @param parameters A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"sigmacol"}, \code{"omega"} and \code{"omega_inv"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol", "omega", "omega_inv")}.
+#' @param columns A string specifying whether to consider only active factors (\code{"kstar"}) or both active and inactive factors (\code{"k"}) for the computation of \code{omega} and \code{omega_inv}. Default is \code{"k"}.
 #'
 #' @return A list containing the posterior means of the parameters specified in \code{parameters}.
 #'
@@ -17,8 +19,6 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
   } else {
     parameters <- intersect(parameters, valid_parameters)
   }
-  # start time
-  t0 <- proc.time()
   # prepare output
   output <- list()
   # check whether all necessary variables are available in out_MCMC
@@ -63,8 +63,6 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
   if(length(output) == 0) {
     stop("No valid parameter provided as input.")
   }
-  # print runtime
-  print(proc.time() - t0, "\n")
   # return a list
   return(output)
 }

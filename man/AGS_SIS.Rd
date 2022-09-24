@@ -37,27 +37,27 @@ AGS_SIS(
 )
 }
 \arguments{
-\item{Y}{A nxp matrix of counts.}
+\item{Y}{A \eqn{n\times p} matrix \eqn{y} of counts.}
 
-\item{X}{A pxq matrix of meta-covariates; the variables must be numeric or factors.}
+\item{X}{A matrix \eqn{x} of meta-covariates having \eqn{p} rows; the variables must be numeric or factors.}
 
-\item{W}{A nxc matrix of covariates; the variables must be numeric or factors.}
+\item{W}{A matrix \eqn{w} of covariates having \eqn{n} rows; the variables must be numeric or factors.}
 
 \item{seed}{Seed. Default is 28.}
 
-\item{stdx}{Boolean: if TRUE, numeric meta-covariates are standardized.}
+\item{stdx}{Logical: if \code{TRUE}, numeric meta-covariates are standardized; by default meta-covariates are standardized.}
 
-\item{stdw}{Boolean: if TRUE, numeric covariates are standardized.}
+\item{stdw}{Logical: if \code{TRUE}, numeric covariates are standardized; by default covariates are standardized.}
 
-\item{WFormula}{Formula specifying  the covariates inserted in the model.}
+\item{WFormula}{Formula specifying  the covariates inserted in the model; by default all are considered.}
 
-\item{XFormula}{Formula specifying  the meta-covariates inserted in the model.}
+\item{XFormula}{Formula specifying  the meta-covariates inserted in the model; by default all are considered.}
 
-\item{kinit}{An integer minimun number of latent factors. Default is \code{min(floor(log(p)*kval),p)}.}
+\item{kinit}{An integer minimun number of latent factors. Default is \code{min(floor(log(p)*kval), p)}.}
 
 \item{kmax}{Maximum number of latent factors. Default is \code{p+1}.}
 
-\item{kval}{An integer initial number of latent factors. Default is 6.}
+\item{kval}{An integer number used to calculate the default value of \code{kinit}. Default is 6.}
 
 \item{nrun}{An integer number of iterations. Default is 100.}
 
@@ -67,34 +67,79 @@ AGS_SIS(
 
 \item{start_adapt}{An integer number of iterations before adaptation. Default is 50.}
 
-\item{b0, b1}{Positive constants for the adaptive probability. Default is \code{c(1,5*10^(-4))}.}
+\item{b0, b1}{Positive constants for the adaptive probability \eqn{p(t)=\exp(b_0+b_1t)}. Default is \eqn{b_0=1} and \eqn{b_1=5\times 10^{-4}}.}
 
-\item{sd_b}{Standard deviation for \eqn{b}. Default is 1.}
+\item{sd_b}{Standard deviation for \eqn{b_m}. Default is \eqn{\sigma_b=1}.}
 
-\item{sd_mu}{Standard deviation for \eqn{\mu}. Default is 1.}
+\item{sd_mu}{Standard deviation for \eqn{\mu_j}. Default is \eqn{\sigma_\mu=1}.}
 
-\item{sd_beta}{Standard deviation for \eqn{\beta}. Default is 1.}
+\item{sd_beta}{Standard deviation for \eqn{\beta_h}. Default is \eqn{\sigma_\beta=1}.}
 
-\item{a_theta, b_theta}{Default is \code{c(1,1)}.}
+\item{a_theta, b_theta}{Shape (\code{a_theta}) and rate (\code{b_theta}) parameters of the gamma prior distribution of \eqn{\theta_{jh}^{-1}}. Default is \eqn{a_{\theta}=b_{\theta}=1}.}
 
-\item{as, bs}{\eqn{\sigma^{-2} \sim Gamma(\code{as}, \code{bs})}. Default is \code{c(1,1)}.}
+\item{as, bs}{Shape (\code{as}) and rate (\code{bs}) parameters of the gamma prior distribution of \eqn{\sigma_j^{-2}}. Default is \eqn{a_{\sigma}=b_{\sigma}=1}.}
 
-\item{p_constant}{Factor probability constant. Default is \code{10*exp(1)*log(p)/p}.}
+\item{p_constant}{Factor probability constant. Default is \eqn{c_p=10e\log(p)/p}.}
 
-\item{alpha}{\eqn{Beta(1, \code{alpha})} for pi.}
+\item{alpha}{Non-negative parameter of the Beta prior distribution of \eqn{v_m}, \eqn{Be(1,\alpha)}. Default is \eqn{\alpha=5}.}
 
 \item{y_max}{A fixed and known upper bound for the values in \code{Y}. Default is \code{Inf}.}
 
-\item{output}{Default is \code{"all"}.}
+\item{output}{A vector containing the names of the parameters for which you want to save the draws from the posterior distribution. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"beta"}, \code{"eta"}, \code{"lambda"} and \code{"sigmacol"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "beta", "eta", "lambda", "sigmacol")}.}
 
-\item{verbose}{If TRUE, print the number of active factors every 10 iterations. Default is \code{TRUE}.}
+\item{verbose}{Logical: if \code{TRUE}, print the number of active factors every 50 iterations. Default is \code{TRUE}.}
 }
 \value{
-A list.
+A list with the following elements:
+\itemize{
+\item \code{numFactors}: a vector containing the number of active factors at each saved iteration.
+\item \code{mu}: a list containing draws from the posterior distribution of \eqn{\mu=(\mu_1,\ldots,\mu_p)^\top\in\mathbb{R}^{p\times c}}.
+\item \code{bmu}: a list containing draws from the posterior distribution of \eqn{b_{\mu}=(b_{\mu,1},\ldots,b_{\mu,q})^\top\in\mathbb{R}^{c\times q}}.
+\item \code{beta}: a list containing draws from the posterior distribution of \eqn{\beta=(\beta_1,\ldots,\beta_k)\in\mathbb{R}^{q\times k}}.
+\item \code{eta}: a list containing draws from the posterior distribution of \eqn{\eta=(\eta_1,\ldots,\eta_n)^\top\in\mathbb{R}^{n\times k}}.
+\item \code{lambda}: a list containing draws from the posterior distribution of \eqn{\Lambda\in\mathbb{R}^{p\times k}}.
+\item \code{sigmacol}: a list containing draws from the posterior distribution of \eqn{(\sigma_1^{-2},\ldots,\sigma_p^{-2})\in\mathbb{R}^{p}}.
+\item \code{time}:
+\item \code{model_prior}: the name of the class of priors for \eqn{\Lambda}.
+\item \code{Y}: the \eqn{n\times p} matrix of counts provided as input to the function.
+\item \code{W}: the \eqn{p\times q} matrix of meta-covariates obtained as a result of variable selection, using \code{WFormula}, and conversion of factors into dichotomous variables.
+\item \code{X}: the \eqn{n\times c} matrix of covariates obtained as a result of variable selection, using \code{XFormula}, and conversion of factors into dichotomous variables.
+\item \code{hyperparameters}: a list containing the hyperparameters provided as input to the function.
+}
 }
 \description{
 Implementation in C++ of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
 }
+\details{
+Suppose an \eqn{n\times p} matrix \eqn{y} of counts is available.
+We consider a count-valued stochastic process \eqn{y_{ij}:\mathbb{W}\to\mathbb{N}}, where \eqn{\mathbb{W}} is the sample space and \eqn{\mathbb{N}=\{0,\ldots,\infty\}}, \eqn{i=1,\ldots,n} and \eqn{j=1,\ldots,p}.
+We introduce continuous-valued process \eqn{y^*_{ij}:\mathbb{X}\to\mathbb{T}}, \eqn{\mathbb{T}\subseteq\mathbb{R}} related to the observed count-valued data \eqn{y_{ij}} via
+\deqn{y_{ij} = h(y^*_{ij})}
+where \eqn{h:\mathbb{T}\to\mathbb{N}} is a rounding operator that sets \eqn{y_{ij}(w)=t} when \eqn{y^*_{ij}(w)\in\mathbb{A}_t} and \eqn{\{\mathbb{A}_t\}^\infty_{t=1}} is a known partition of \eqn{\mathbb{T}}.
+We introduce latent variables \eqn{z_{ij}}, defined as \eqn{\log(y^*_{ij}) = z_{ij}} and modeled through an Infinite Factor model as follows
+\deqn{z_{ij} = w_i^\top\mu_j+\epsilon_{ij},}
+where \eqn{w_i\in\mathbb{R}^c} are the covariates of the \eqn{i}th observation, \eqn{\mu_j\in\mathbb{R}^c} quantifies the effect of the covariates on the \eqn{j}th column of \eqn{y}, and
+\deqn{\epsilon_i=(\epsilon_{i1},\ldots,\epsilon_{ip})^\top\sim N_p(0, \Omega)}
+The matrix \eqn{\Omega = var(\epsilon_i)} can be expressed as
+\deqn{\Omega = \Lambda\Lambda^\top + \Sigma}
+where the \eqn{h}th column of \eqn{\Lambda\in\mathbb{R}^{p\times k}} quantifies the effect of the \eqn{h}th latent factor on the columns of \eqn{y} and \eqn{\Sigma=diag(\sigma^2_1,\ldots,\sigma^2_p)} with \eqn{\sigma^{-2}_j\sim Ga(a_{\sigma},b_{\sigma})}, \eqn{j=1,\ldots,p}.
+
+The focus is on a new class of generalized infinite factor models induced through a novel class of priors for \eqn{\Lambda} that allows infinitely many factors, \eqn{k = \infty}. In particular, we let
+\deqn{\lambda_{jh}|\theta_{jh}\sim N(0,\theta_{jh}), \quad \theta_{jh}=\tau_0\gamma_h\phi_{jh}, \quad \tau_0\sim f_{\tau_0}, \quad \gamma_h\sim f_{\gamma_h}, \quad \phi_{jh}\sim f_{\phi_j},}
+where \eqn{f_{\tau_0}}, \eqn{f_{\gamma_h}} and \eqn{f_{\phi_j}} are supported in \eqn{[0,\infty)} with positive probability mass on \eqn{(0,\infty)}. The local \eqn{\phi_{jh}}, column-specific \eqn{\gamma_h}, and global \eqn{\tau_0} scales are all independent a priori.
+
+We define a non-exchangeable structure, called \emph{Structured Increasing Shrinkage} (\emph{SIS}) Process, that includes meta-covariates \eqn{x\in\mathbb{R}^{p\times q}} informing the sparsity structure of \eqn{\Lambda}; we specify
+\deqn{\tau_0=1, \quad\gamma_h=\theta_h\rho_h, \quad\phi_{jh}|\beta_h\sim Ber(logit^{-1}(x_j^\top\beta_h)c_p),}
+\deqn{\theta_h^{-1}\sim Ga(a_\theta,b_\theta), \quad a_\theta>1, \quad\rho_h=Ber(1-\pi_h), \quad \beta_h\sim N_q(0, \sigma^2_\beta I_q),}
+where we assume the link \eqn{g(x)=logit^{-1}(x)c_p}, with \eqn{logit^{-1}(x)=e^x/(1+e^x)} and \eqn{c_p\in(0,1)} a possible offset.
+The parameter \eqn{\pi_h=pr(\lambda_h=0)} follows a stick-breaking construction,
+\deqn{\pi_h=\sum_{l=1}^hw_l, \quad w_l=v_l\prod_{m=1}^{l-1}(1-v_m), \quad v_m\sim Be(1,\alpha),}
+
+Posterior inference is conducted via Markov chain Monte Carlo sampling.
+Following common practice in infinite factor models, we use an Adaptive Gibbs Sampler, which attempts to infer the best truncation level \eqn{H} while drawing from the posterior distribution of the parameters.
+The value of \eqn{H} is adapted only at some Gibbs iterations by discarding redundant factors and, if no redundant factors are identified, by adding a new factor by sampling its parameters from the prior distribution.
+The probability of occurrence of an adaptive iteration \eqn{t} as equal to \eqn{p(t)=\exp(b_0+b_1t)}, where \eqn{b_0} and \eqn{b_1} are positive constants, such that frequency of adaptation decreases.
+}
 \seealso{
-\code{\link{update_bmu}}, \code{\link{update_mu}}, \code{\link{update_eta}}, \code{\link{update_Lambda_star}}, \code{\link{update_d}}, \code{\link{update_Phi}}
+The function \code{\link{lposterior}} compute the log-posterior probabilities of part or all the MCMC iterations.. Two alternative implementations of the Adaptive Gibbs Sampler are \code{\link{AGS_SIS_R}} and \code{\link{AGS_SIS_RC}}.
 }

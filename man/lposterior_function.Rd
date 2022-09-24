@@ -20,5 +20,5 @@ A number which is the log-posterior probability of the \code{ind}th iteration of
 Compute the log-posterior probability of a single MCMC iteration.
 }
 \seealso{
-This function is applied to an output of \code{\link{AGS_SIS}}.
+This function is applied to an output of \code{\link{AGS_SIS}}. This function is used in \code{\link{lposterior}}.
 }

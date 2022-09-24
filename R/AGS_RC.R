@@ -60,13 +60,13 @@ AGS_SIS_RC <- function(Y,
                        verbose = TRUE) {
   # -------------------------------------------------------------------------- #
   # set seed
-  if((length(seed) != 1) | !is.numeric(seed) | (seed != round(seed))) {
+  if((length(seed) != 1) || !is.numeric(seed) || (seed != round(seed))) {
     stop("'seed' not valid: it must be an integer.")
   } else {
     set.seed(seed)
   }
   # -------------------------------------------------------------------------- #
-  if((length(verbose) != 1) | !is.logical(verbose)) {
+  if((length(verbose) != 1) || !is.logical(verbose)) {
     stop("'verbose' not valid: it must be 'TRUE' or 'FALSE'.")
   }
   # -------------------------------------------------------------------------- #
@@ -79,7 +79,7 @@ AGS_SIS_RC <- function(Y,
     if(p != nrow(X)) {
       stop("'Y' and 'X' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X'.")
     }
-    if((length(stdx) != 1) | !is.logical(stdx)) {
+    if((length(stdx) != 1) || !is.logical(stdx)) {
       stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
     }
     if(stdx) {
@@ -96,7 +96,7 @@ AGS_SIS_RC <- function(Y,
     if(n != nrow(W)) {
       stop("'Y' and 'W' not compatible: they must have the same number of rows.")
     }
-    if((length(stdw) != 1) | !is.logical(stdw)) {
+    if((length(stdw) != 1) || !is.logical(stdw)) {
       stop("'stdw' not valid: it must be 'TRUE' or 'FALSE'.")
     }
     if(stdw){
@@ -111,33 +111,33 @@ AGS_SIS_RC <- function(Y,
   # -------------------------------------------------------------------------- #
   if(is.null(kinit)) {
     kinit <- min(floor(log(p) * kval), p)
-  } else if((length(kinit) != 1) | !is.numeric(kinit) | (kinit != round(kinit))) {
+  } else if((length(kinit) != 1) || !is.numeric(kinit) || (kinit != round(kinit))) {
     stop("'kinit' not valid: it must be an integer.")
   }
   if(is.null(kmax)) {
     kmax <- p + 1
-  } else if((length(kmax) != 1) | !is.numeric(kmax) | (kmax != round(kmax)) | (kmax < kinit)) {
+  } else if((length(kmax) != 1) || !is.numeric(kmax) || (kmax != round(kmax)) || (kmax < kinit)) {
     stop("'kmax' not valid: it must be an integer greater than or equal to 'kinit'.")
   }
   k <- kinit                         # number of factors to start with (active and inactive)
   kstar <- k - 1                     # number of active factors
   # -------------------------------------------------------------------------- #
-  if((length(nrun) != 1) | !is.numeric(nrun) | (nrun != round(nrun))) {
+  if((length(nrun) != 1) || !is.numeric(nrun) || (nrun != round(nrun))) {
     stop("'nrun' not valid: it must be an integer.")
   }
-  if((length(burn) != 1) | !is.numeric(burn) | (burn != round(burn)) | (burn >= nrun)) {
+  if((length(burn) != 1) || !is.numeric(burn) || (burn != round(burn)) || (burn >= nrun)) {
     stop("'burn' not valid: it must be an integer less than 'nrun'.")
   }
-  if((length(thin) != 1) | !is.numeric(thin) | (thin != round(thin)) | (thin > nrun - burn)) {
+  if((length(thin) != 1) || !is.numeric(thin) || (thin != round(thin)) || (thin > nrun - burn)) {
     stop("'thin' not valid: it must be an integer greater than or equal to 'nrun - burn'.")
   }
-  if((length(start_adapt) != 1) | !is.numeric(start_adapt) | (start_adapt != round(start_adapt))) {
+  if((length(start_adapt) != 1) || !is.numeric(start_adapt) || (start_adapt != round(start_adapt))) {
     stop("'start_adapt' not valid: it must be an integer.")
   }
   # number of posterior samples
   sp <- floor((nrun - burn) / thin)
   # -------------------------------------------------------------------------- #
-  if((length(y_max) != 1) | !is.numeric(y_max)) {
+  if((length(y_max) != 1) || !is.numeric(y_max)) {
     stop("'y_max' not valid: it must be a number or 'Inf'.")
   }
   # Transformation for the response
@@ -154,10 +154,10 @@ AGS_SIS_RC <- function(Y,
   }
   # -------------------------------------------------------------------------- #
   # Adaptive probability
-  if((length(b0) != 1) | !is.numeric(b0) | (b0 < 0)) {
+  if((length(b0) != 1) || !is.numeric(b0) || (b0 < 0)) {
     stop("'b0' not valid: it must be greater than or equal to 0.")
   }
-  if((length(b1) != 1) | !is.numeric(b1) | (b1 <= 0)) {
+  if((length(b1) != 1) || !is.numeric(b1) || (b1 <= 0)) {
     stop("'b1' not valid: it must be greater than 0.")
   }
   prob <- 1 / exp(b0 + b1 * seq(1, nrun))
@@ -166,30 +166,30 @@ AGS_SIS_RC <- function(Y,
   # p constant (c_p)
   if(is.null(p_constant)) {
     p_constant <- 10 * exp(1) * log(p) / p
-  } else if((length(p_constant) != 1) | !is.numeric(p_constant) | (p_constant <= 0) | (p_constant >= 1)) {
+  } else if((length(p_constant) != 1) || !is.numeric(p_constant) || (p_constant <= 0) || (p_constant >= 1)) {
     stop("'p_constant' not valid: it must be a number in (0,1).")
   }
   # -------------------------------------------------------------------------- #
   # check fixed parameters
-  if((length(sd_b) != 1) | !is.numeric(sd_b) | (sd_b <= 0)) {
+  if((length(sd_b) != 1) || !is.numeric(sd_b) || (sd_b <= 0)) {
     stop("'sd_b' not valid: it must be greater than 0.")
   }
-  if((length(sd_mu) != 1) | !is.numeric(sd_mu) | (sd_mu <= 0)) {
+  if((length(sd_mu) != 1) || !is.numeric(sd_mu) || (sd_mu <= 0)) {
     stop("'sd_mu' not valid: it must be greater than 0.")
   }
-  if((length(sd_beta) != 1) | !is.numeric(sd_beta) | (sd_beta <= 0)) {
+  if((length(sd_beta) != 1) || !is.numeric(sd_beta) || (sd_beta <= 0)) {
     stop("'sd_beta' not valid: it must be greater than 0.")
   }
-  if((length(a_theta) != 1) | !is.numeric(a_theta) | (a_theta <= 0)) {
+  if((length(a_theta) != 1) || !is.numeric(a_theta) || (a_theta <= 0)) {
     stop("'a_theta' not valid: it must be greater than 0.")
   }
-  if((length(b_theta) != 1) | !is.numeric(b_theta) | (b_theta <= 0)) {
+  if((length(b_theta) != 1) || !is.numeric(b_theta) || (b_theta <= 0)) {
     stop("'b_theta' not valid: it must be greater than 0.")
   }
-  if((length(as) != 1) | !is.numeric(as) | (as <= 0)) {
+  if((length(as) != 1) || !is.numeric(as) || (as <= 0)) {
     stop("'as' not valid: it must be greater than 0.")
   }
-  if((length(bs) != 1) | !is.numeric(bs) | (bs <= 0)) {
+  if((length(bs) != 1) || !is.numeric(bs) || (bs <= 0)) {
     stop("'bs' not valid: it must be greater than 0.")
   }
   # -------------------------------------------------------------------------- #
@@ -232,8 +232,7 @@ AGS_SIS_RC <- function(Y,
                      "eta",         # etaval               : nxk
                      "lambda",      # loadSamples          : pxk
                      "sigmacol",    # sigmacol (1/sigma^2) : p
-                     "numFactors",  # numFactors (kstar)   : t
-                     "time"         # time                 : 1
+                     "numFactors"   # numFactors (kstar)   : t
   )
   if("all" %in% output) {
     output <- valid_outputs
@@ -249,7 +248,6 @@ AGS_SIS_RC <- function(Y,
   if("lambda" %in% output) LAMBDA <- list()
   if("sigmacol" %in% output) sig <- list()
   if("numFactors" %in% output) K <- rep(NA, sp)
-  if("time" %in% output) runtime <- NULL
   # -------------------------------------------------------------------------- #
   # ADAPTIVE GIBBS SAMPLING
   # -------------------------------------------------------------------------- #
@@ -399,7 +397,6 @@ AGS_SIS_RC <- function(Y,
     }
     # ------------------------------------------------------------------------ #
   }
-  runtime <- proc.time() - t0
   # -------------------------------------------------------------------------- #
   out <- lapply(output, function(x) {
     if(!is.null(W)) {
@@ -411,9 +408,9 @@ AGS_SIS_RC <- function(Y,
     if(x == "lambda") return(LAMBDA)    # etaval             : nxk
     if(x == "sigmacol") return(sig)     # sigmacol           : p
     if(x == "numFactors") return(K)     # numFactors (kstar) : t
-    if(x == "time") return(runtime[1])  # time               : 1
   })
   names(out) <- output
+  out["time"] <- (proc.time() - t0)[1]
   out[["model_prior"]] <- "SIS"
   out[["Y"]] <- Y                       # data               : nxp
   if(!is.null(W)) out[["W"]] <- W       # covariates         : nxc

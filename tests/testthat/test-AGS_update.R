@@ -1,3 +1,5 @@
-test_that("AGS_update (DA SCRIVERE)", {
-  expect_equal(2 * 2, 4)
+test_that("AGS_update: update_bmu", {
+
+  expect_equal(10, 10+1e-7)
 })
+
