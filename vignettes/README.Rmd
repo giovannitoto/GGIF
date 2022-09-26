@@ -14,19 +14,66 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Generalized Infinite Factorization models
+
+This vignette provides an introductory example on how to work with the `GGIF` package in order to ...
+
+## Installation
+
+To install this package type (in R):
+
+```{r install}
+# library(devtools)
+# install_github("giovannitoto/GGIF")
+```
+
+## Data
+
+First, we clean the workspace and load the needed packages.
+
 ```{r setup}
 rm(list=ls())
 library(GGIF)
 library(ggplot2)
+library(reshape2)
+library(latex2exp)
+library(RColorBrewer)
 ```
 
-```{r data}
-Y <- GGIF::Y
-W <- GGIF::W
-X <- GGIF::X
-```
+We proceed by loading three matrices:
 
-```{r inputs1}
+-   `Y`: a matrix of counts with 30 rows and 500 columns;
+
+    ```{r dataY}
+    data(Y, package="GGIF")
+    dim(Y)
+    ```
+
+-   `W`: a matrix of covariates with 30 rows and 11 columns.
+
+    ```{r dataW}
+    data(W, package="GGIF")
+    dim(W)
+    ```
+
+-   `X`: a matrix of meta-covariates with 500 rows and 5 columns.
+
+    ```{r dataX}
+    data(X, package="GGIF")
+    dim(X)
+    ```
+
+## Posterior computation
+
+Posterior computation is carried out through the function `AGS_SIS()`; the arguments of the function can be divided into 5 groups:
+
+1.  arguments related to general settings of the function;
+2.  arguments related to the data preparation;
+3.  arguments related to the latent factors;
+4.  arguments related to the iterations of the *Adaptive Gibbs Sampler*;
+5.  arguments related to the parameters of the model.
+
+```{r inputs}
 seed <- 28
 output <- "all"
 verbose <- TRUE
@@ -44,7 +91,7 @@ kval <- 6
 nrun <- 50
 burn <- round(nrun / 4)
 thin <- 1
-start_adapt <- 10
+start_adapt <- 5
 # 5
 b0 <- 1; b1 <- 5 * 10^(-4)
 sd_b <- 1; sd_mu <- 1; sd_beta <- 1
@@ -54,6 +101,8 @@ alpha <- 5
 p_constant <- NULL
 ```
 
+We save the results of the posterior inference in a variable called `out_MCMC`.
+
 ```{r AGS}
 out_MCMC <- AGS_SIS(Y = Y, X = X, W = W,
                     seed = seed,
@@ -61,7 +110,8 @@ out_MCMC <- AGS_SIS(Y = Y, X = X, W = W,
                     WFormula = WFormula,
                     XFormula = XFormula,
                     kinit = kinit, kmax = kmax, kval = kval,
-                    nrun = nrun, burn = burn, thin = thin, start_adapt = start_adapt,
+                    nrun = nrun, burn = burn, thin = thin,
+                    start_adapt = start_adapt,
                     b0 = b0, b1 = b1,
                     sd_b = sd_b, sd_mu = sd_mu, sd_beta = sd_beta,
                     a_theta = a_theta, b_theta = b_theta,
@@ -70,32 +120,102 @@ out_MCMC <- AGS_SIS(Y = Y, X = X, W = W,
                     y_max = y_max, output = output,
                     verbose = verbose)
 ```
-```{r factors}
-cat("Seconds", out_MCMC$time, "\n")
-cat("Minutes", out_MCMC$time / 60, "\n")
-cat("Hours", out_MCMC$time / 60 / 60, "\n")
-```
+
+### Results
+
+`out_MCMC` is a list object containing:
+
+-   `numFactors`: a vector containing the number of active factors at each saved iteration;
+
+-   `mu`, `bmu`, `beta`, `eta`, `Lambda`, `sigmacol`: lists containing draws from the posterior distribution of $\mu$, $b_{\mu}$ , $\beta$, $\eta$, $\Lambda$ and $(\sigma_1^{-2},\ldots,\sigma_p^{-2})$;
+
+-   `time`:
+
+-   `model_prior`: the name of the class of priors for $\Lambda$.
+
+-   `Y`, `W` and `X`: matrices of counts, covariates and meta-covariates; it should be noted that the matrices W and X given as input to the function and the ones in `out_MCMC` can be different since the latter are obtained as a result of variable selection, standardization of numerical variables and conversion of factors into dichotomous variables;
+
+-   `hyperparameters`: a list containing the parameters of the model and other arguments of the function.
+
+    ```{r out_MCMC}
+    names(out_MCMC)
+    ```
+
+## Post-processing
+
+### Adaptation
+
+The number of factors, potentially infinite, is selected through the use of an *Adaptive Gibbs Sampler*. We can use `numFactors` to observe how the number of factors varies as the algorithm goes on; in particular, we plot below the number of active factor at each saved iteration.
+
 ```{r numFactors}
-dd <- as.data.frame(cbind(1:length(out_MCMC$numFactors), out_MCMC$numFactors))
-ggplot(data=dd, aes(x=V1, y=V2)) +
-  geom_line(colour = "blue", size = 1.1)+
-  labs(x = "", y = "k")+
-  scale_y_continuous(name="k", breaks = 0:max(dd[,2]),
-                     limit = c(min(dd[,2])-1, max(dd[,2])+1)) +
-  theme_bw() + theme(panel.grid.major.x = element_blank(),
-                     panel.grid.minor = element_blank(),
-                     axis.line = element_line(colour = "black"),
-                     legend.position = "bottom")
-```
-```{r post_proc}
-post_proc <- lposterior(out_MCMC, frac_sampled = 1/2)
-```
-```{r }
-```
-```{r }
-```
-```{r }
-```
-```{r }
+plot(1:length(out_MCMC$numFactors), out_MCMC$numFactors, type="b", pch = 20,
+     xlab = "sample", ylab = "active factors")
 ```
 
+### Parameter estimation
+
+We are interested in the estimation of the parameters of the model. In particular, we estimate $\mu$, $b_{\mu}$ and $\Sigma=diag(\sigma^2_1,\ldots,\sigma^2_p)$, by approximating their posterior mean with the mean of their MCMC draws; we estimate $\beta$, $\eta$ and $\Lambda$ by approximating their posterior mode with the values they assume at the MCMC iteration with the highest marginal posterior density function. Finally, we are also interested in the estimation of $\Omega=\Lambda\Lambda^\top+\Sigma$ and $\Omega^{-1}$, which are approximations of the covariance matrix and of the partial correlation matrix respectively.
+
+### Posterior means
+
+The computation of the posterior means is carried out through the function `posterior_mean()` ; the `parameters` argument specifies the parameters for which we want to compute the posterior mean.
+
+```{r posterior_mean_k}
+pmean_k <- posterior_mean(out_MCMC, parameters = "all", columns = "k")
+```
+
+By default the posterior means of $\Omega$ and $\Omega^{-1}$ are computed considering both active and inactive factors (`"k"`): if we want to consider active factors only (`"kstar"`), we can use the `columns` argument as follows.
+
+```{r posterior_mean_kstar}
+pmean_kstar <- posterior_mean(out_MCMC, parameters = "all", columns = "kstar")
+```
+
+### Log-posterior probabilities and posterior modes
+
+The computation of the log-posterior probabilities and the identification of the posterior modes are carried out through the function `lposterior();`the `parameters` argument specifies the parameters for which we want to identify the posterior mode.
+
+```{r post_proc_k}
+post_proc_k <- lposterior(out_MCMC, columns = "k")
+```
+
+As before, by default the log-posterior probabilities are computed considering both active and inactive factors (`"k"`): if we want to consider active factors only (`"kstar"`), we can use the `columns` argument as follows.
+
+```{r post_proc_kstar}
+post_proc_kstar <- lposterior(out_MCMC, columns = "kstar")
+```
+
+We show below that considering active factors only or both active and inactive factors can provide slightly different results in terms of log-posterior probabilities.
+
+```{r lposterior_plot_k_kstar}
+plot(post_proc_k$sampled, post_proc_k$lposterior, type="b", pch = 1, 
+     col = 4, xlab = "sample", ylab = "log-posterior probability",
+     ylim = c(min(post_proc_k$lposterior, post_proc_kstar$lposterior) - 1000,
+              max(post_proc_k$lposterior, post_proc_kstar$lposterior) + 1000))
+points(post_proc_k$iteration_max, post_proc_k$lposterior_max, pch=19, col = 4)
+points(post_proc_kstar$sampled, post_proc_kstar$lposterior, type="b", pch = 1,
+     col = 2, xlab = "sample", ylab = "log-posterior probability")
+points(post_proc_kstar$iteration_max, post_proc_kstar$lposterior_max, pch=19, col = 2)
+```
+
+#### Speed up computations
+
+To speed up computations, we can evaluate a fraction of the iterations using the `frac_sampled` or the `samples` argument; for instance, we could use the latter argument in order to parallelize the computation of the log-posterior probabilities.
+
+```{r post_proc_k_samples}
+post_proc_k_1 <- lposterior(out_MCMC, columns = "k", samples =  1:19)
+post_proc_k_2 <- lposterior(out_MCMC, columns = "k", samples = 20:38)
+
+sampled <- c(post_proc_k_1$sampled, post_proc_k_2$sampled)
+lpost <- c(post_proc_k_1$lposterior, post_proc_k_2$lposterior)
+lpost_max <- max(lpost)
+iteration_max <- sampled[which.max(lpost)]
+```
+
+We can show that `post_proc_k` and `post_proc_k_1`, `post_proc_k_2` do not provide identical results, since the computation of the log-posterior probabilities is not deterministic, however the differences seem negligible.
+
+```{r lposterior_k_plot}
+plot(sampled, lpost, type="b", col = 4, pch = 20)
+points(post_proc_k$sampled, post_proc_k$lposterior, type="b", col=2, pch = 20)
+```
+
+## Plots

@@ -102,8 +102,8 @@ A list with the following elements:
 \item \code{time}:
 \item \code{model_prior}: the name of the class of priors for \eqn{\Lambda}.
 \item \code{Y}: the \eqn{n\times p} matrix of counts provided as input to the function.
-\item \code{W}: the \eqn{p\times q} matrix of meta-covariates obtained as a result of variable selection, using \code{WFormula}, and conversion of factors into dichotomous variables.
-\item \code{X}: the \eqn{n\times c} matrix of covariates obtained as a result of variable selection, using \code{XFormula}, and conversion of factors into dichotomous variables.
+\item \code{W}: the \eqn{p\times q} matrix of meta-covariates obtained as a result of variable selection, using \code{WFormula}, standardization of numerical variables, using \code{stdw}, and conversion of factors into dichotomous variables.
+\item \code{X}: the \eqn{n\times c} matrix of covariates obtained as a result of variable selection, using \code{XFormula}, standardization of numerical variables, using \code{stdx}, and conversion of factors into dichotomous variables.
 \item \code{hyperparameters}: a list containing the hyperparameters provided as input to the function.
 }
 }

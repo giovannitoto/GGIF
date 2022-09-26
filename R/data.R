@@ -1,6 +1,6 @@
 #' @title W
 #' @description A nxc matrix of covariates.
-#' @format A data frame with 30 rows and 11 columns.
+#' @format A matrix with 30 rows and 11 columns.
 #' @details DETAILS
 "W"
 
