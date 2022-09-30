@@ -22,7 +22,7 @@ This vignette provides an introductory example on how to work with the `GGIF` pa
 
 To install this package type (in R):
   
-  ```{r install}
+```{r install}
 # library(devtools)
 # install_github("giovannitoto/GGIF")
 ```
