@@ -1,8 +1,8 @@
 ---
-title: "Generalized Infinite Factorization models"
+title: "Vignette"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{README}
+  %\VignetteIndexEntry{Vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -21,8 +21,8 @@ This vignette provides an introductory example on how to work with the `GGIF` pa
 ## Installation
 
 To install this package type (in R):
-
-```{r install}
+  
+  ```{r install}
 # library(devtools)
 # install_github("giovannitoto/GGIF")
 ```
@@ -41,37 +41,37 @@ library(RColorBrewer)
 ```
 
 We proceed by loading three matrices:
+  
+  -   `Y`: a matrix of counts with 30 rows and 500 columns;
 
--   `Y`: a matrix of counts with 30 rows and 500 columns;
-
-    ```{r dataY}
-    data(Y, package="GGIF")
-    dim(Y)
-    ```
+```{r dataY}
+data(Y, package="GGIF")
+dim(Y)
+```
 
 -   `W`: a matrix of covariates with 30 rows and 11 columns.
 
-    ```{r dataW}
-    data(W, package="GGIF")
-    dim(W)
-    ```
+```{r dataW}
+data(W, package="GGIF")
+dim(W)
+```
 
 -   `X`: a matrix of meta-covariates with 500 rows and 5 columns.
 
-    ```{r dataX}
-    data(X, package="GGIF")
-    dim(X)
-    ```
+```{r dataX}
+data(X, package="GGIF")
+dim(X)
+```
 
 ## Posterior computation
 
 Posterior computation is carried out through the function `AGS_SIS()`; the arguments of the function can be divided into 5 groups:
-
-1.  arguments related to general settings of the function;
-2.  arguments related to the data preparation;
-3.  arguments related to the latent factors;
-4.  arguments related to the iterations of the *Adaptive Gibbs Sampler*;
-5.  arguments related to the parameters of the model.
+  
+  1.  arguments related to general settings of the function;
+2.  arguments related to data preparation;
+3.  arguments related to latent factors;
+4.  arguments related to iterations of the *Adaptive Gibbs Sampler*;
+5.  arguments related to the model parameters.
 
 ```{r inputs}
 seed <- 28
@@ -124,22 +124,22 @@ out_MCMC <- AGS_SIS(Y = Y, X = X, W = W,
 ### Results
 
 `out_MCMC` is a list object containing:
-
--   `numFactors`: a vector containing the number of active factors at each saved iteration;
+  
+  -   `numFactors`: a vector containing the number of active factors at each saved iteration;
 
 -   `mu`, `bmu`, `beta`, `eta`, `Lambda`, `sigmacol`: lists containing draws from the posterior distribution of $\mu$, $b_{\mu}$ , $\beta$, $\eta$, $\Lambda$ and $(\sigma_1^{-2},\ldots,\sigma_p^{-2})$;
 
 -   `time`:
+  
+  -   `model_prior`: the name of the class of priors for $\Lambda$.
 
--   `model_prior`: the name of the class of priors for $\Lambda$.
-
--   `Y`, `W` and `X`: matrices of counts, covariates and meta-covariates; it should be noted that the matrices W and X given as input to the function and the ones in `out_MCMC` can be different since the latter are obtained as a result of variable selection, standardization of numerical variables and conversion of factors into dichotomous variables;
+-   `Y`, `W` and `X`: matrices of counts, covariates and meta-covariates; it should be noted that the matrices `W` and `X` given as input to the function and the ones in `out_MCMC` can be different since the latter are obtained as a result of variable selection, standardization of numerical variables and conversion of factors into dichotomous variables;
 
 -   `hyperparameters`: a list containing the parameters of the model and other arguments of the function.
 
-    ```{r out_MCMC}
-    names(out_MCMC)
-    ```
+```{r out_MCMC}
+names(out_MCMC)
+```
 
 ## Post-processing
 
@@ -154,7 +154,7 @@ plot(1:length(out_MCMC$numFactors), out_MCMC$numFactors, type="b", pch = 20,
 
 ### Parameter estimation
 
-We are interested in the estimation of the parameters of the model. In particular, we estimate $\mu$, $b_{\mu}$ and $\Sigma=diag(\sigma^2_1,\ldots,\sigma^2_p)$, by approximating their posterior mean with the mean of their MCMC draws; we estimate $\beta$, $\eta$ and $\Lambda$ by approximating their posterior mode with the values they assume at the MCMC iteration with the highest marginal posterior density function. Finally, we are also interested in the estimation of $\Omega=\Lambda\Lambda^\top+\Sigma$ and $\Omega^{-1}$, which are approximations of the covariance matrix and of the partial correlation matrix respectively.
+We are interested in the estimation of the parameters of the model. In particular, we estimate $\mu$, $b_{\mu}$ and $\Sigma=diag(\sigma^2_1,\ldots,\sigma^2_p)$, by approximating their posterior mean with the mean of their MCMC draws; we estimate $\beta$, $\eta$ and $\Lambda$ by approximating their posterior mode with the values they take at the MCMC iteration with the highest marginal posterior density function. Finally, we are also interested in the estimation of $\Omega=\Lambda\Lambda^\top+\Sigma$ and $\Omega^{-1}$, which are approximations of the covariance matrix and of the partial correlation matrix respectively.
 
 ### Posterior means
 
@@ -193,7 +193,7 @@ plot(post_proc_k$sampled, post_proc_k$lposterior, type="b", pch = 1,
               max(post_proc_k$lposterior, post_proc_kstar$lposterior) + 1000))
 points(post_proc_k$iteration_max, post_proc_k$lposterior_max, pch=19, col = 4)
 points(post_proc_kstar$sampled, post_proc_kstar$lposterior, type="b", pch = 1,
-     col = 2, xlab = "sample", ylab = "log-posterior probability")
+       col = 2, xlab = "sample", ylab = "log-posterior probability")
 points(post_proc_kstar$iteration_max, post_proc_kstar$lposterior_max, pch=19, col = 2)
 ```
 

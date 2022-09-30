@@ -19,3 +19,6 @@ A list containing the posterior means of the parameters specified in \code{param
 \description{
 Compute the posterior mean of one or more parameters.
 }
+\seealso{
+This function is applied to an output of \code{\link{AGS_SIS}}.
+}

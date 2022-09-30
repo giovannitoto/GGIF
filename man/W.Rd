@@ -5,7 +5,7 @@
 \alias{W}
 \title{W}
 \format{
-A data frame with 30 rows and 11 columns.
+A matrix with 30 rows and 11 columns.
 }
 \usage{
 W

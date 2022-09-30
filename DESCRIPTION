@@ -20,7 +20,7 @@ Imports:
 LinkingTo: 
     Rcpp,
     RcppArmadillo
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

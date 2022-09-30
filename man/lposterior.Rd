@@ -43,8 +43,8 @@ If \code{columns="k"}, \code{beta_max}, \code{eta_max} and \code{lambda_max} con
 }
 \description{
 Compute the log-posterior probabilities of part or all the MCMC iterations.
-To speed up computations, it is possible to evaluate only a random fraction of the iterations, using the parameter \code{frac_sampled}, or to define the iterations of interest, using the parameter \code{samples}.
+To speed up computations, it is possible to evaluate only a random fraction of the iterations, using the \code{frac_sampled} argument, or to define the iterations of interest, using the \code{samples} argument.
 }
 \seealso{
-This function is applied to an output of \code{\link{AGS_SIS}}. The function \code{\link{lposterior_function}} is used to compute the log-posterior probability of a single MCMC iteration.
+This function is applied to an output of \code{\link{AGS_SIS}}.
 }

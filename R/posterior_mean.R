@@ -10,6 +10,8 @@
 #'
 #' @return A list containing the posterior means of the parameters specified in \code{parameters}.
 #'
+#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}.
+#'
 #' @export
 posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
   # remove invalid strings from 'parameters'
@@ -18,6 +20,10 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
     parameters <- valid_parameters
   } else {
     parameters <- intersect(parameters, valid_parameters)
+  }
+  # stop if no valid string is provided as input
+  if(length(parameters) == 0) {
+    stop("No valid parameter provided as input.")
   }
   # prepare output
   output <- list()
@@ -33,7 +39,7 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
   # compute the posterior mean of 'omega' and/or 'omega_inv'
   if (any(c("omega", "omega_inv") %in% parameters)) {
     # check the value of 'columns'
-    if(!(columns %in% c("k", "kstar"))) {
+    if((length(columns) != 1) || !(columns %in% c("k", "kstar"))) {
       stop("'columns' not valid: it must be 'k' or 'kstar'.")
     }
     if(check_list(out_MCMC, c("lambda", "numFactors", "sigmacol")) == FALSE) {
@@ -58,10 +64,6 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
         output[["omega_inv"]] <- output[["omega_inv"]] / t
       }
     }
-  }
-  # stop if no valid string is provided as input
-  if(length(output) == 0) {
-    stop("No valid parameter provided as input.")
   }
   # return a list
   return(output)

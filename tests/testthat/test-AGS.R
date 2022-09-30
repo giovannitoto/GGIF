@@ -30,7 +30,7 @@ test_that("Adaptive Gibbs Sampler: wrong input parameters", {
   y_max <- Inf
   output <- ""
   verbose <- TRUE
-  # wrong input parameters
+  # wrong arguments
   expect_error(AGS_SIS(Y = Y, X = X, W = W,
                        seed = c(1, 2),
                        stdx = stdx, stdw = stdw,

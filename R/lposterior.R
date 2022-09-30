@@ -3,7 +3,7 @@
 #' Log-posterior probability
 #'
 #' Compute the log-posterior probabilities of part or all the MCMC iterations.
-#' To speed up computations, it is possible to evaluate only a random fraction of the iterations, using the parameter \code{frac_sampled}, or to define the iterations of interest, using the parameter \code{samples}.
+#' To speed up computations, it is possible to evaluate only a random fraction of the iterations, using the \code{frac_sampled} argument, or to define the iterations of interest, using the \code{samples} argument.
 #'
 #' @param out_MCMC A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.
 #' @param frac_sampled A value in (0,1] specifying the fraction of the iterations to evaluate. Default is 1, that is all the iterations.
@@ -26,21 +26,24 @@
 #' }
 #' If \code{columns="k"}, \code{beta_max}, \code{eta_max} and \code{lambda_max} contain only columns linked to active factors; if \code{columns="kstar"}, they contain columns linked to both active and inactive factors
 #'
-#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}. The function \code{\link{lposterior_function}} is used to compute the log-posterior probability of a single MCMC iteration.
+#' @seealso This function is applied to an output of \code{\link{AGS_SIS}}.
+# The function \code{\link{lposterior_function}} is used to compute the log-posterior probability of a single MCMC iteration.
 #'
 #' @export
 lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
                        columns = "k", parameters = "all", seed = 28) {
   # set seed
+  if((length(seed) != 1) || !is.numeric(seed) || (seed != round(seed))) {
+    stop("'seed' not valid: it must be an integer.")
+  } else {
+    set.seed(seed)
+  }
   set.seed(seed)
   # check whether all necessary variables are available in out_MCMC
   required_variables <- c("Y", "X", "numFactors", "beta", "eta", "lambda",
                           "sigmacol", "hyperparameters")
   if(check_list(out_MCMC, required_variables) == FALSE) {
     stop(paste(paste(c(required_variables), collapse = ", "), "must be stored in the MCMC output."))
-  }
-  if(check_list(out_MCMC, "W") == TRUE & check_list(out_MCMC, c("mu", "bmu")) == FALSE) {
-    stop("If 'W' is stored in the MCMC output, then also 'mu', 'bmu' must be stored in the MCMC output.")
   }
   required_hyperparameters <- c("alpha", "a_theta", "b_theta", "sd_b", "sd_mu",
                                 "sd_beta","as", "bs", "p_constant", "y_max")
@@ -58,7 +61,7 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
   # number of iterations
   t <- length(out_MCMC$numFactors)
   # sampling
-  if((frac_sampled <= 0) | (frac_sampled > 1)) {
+  if((length(frac_sampled) != 1) || (frac_sampled <= 0) || (frac_sampled > 1)) {
     stop("'frac_sampled' not valid: it must be a number in (0,1].")
   }
   if(is.null(samples)) {
@@ -67,15 +70,15 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
     if(any(sapply(samples, function(x) x != round(x)))) {
       stop("'samples' not valid: it must be a vector of integers.")
     }
-    if((min(samples) <= 0) | (max(samples) > t)) {
-      stop("'samples' not valid: it must be a vector of integers between 1 and the number of iterations of the MCMC chain.")
+    if((min(samples) <= 0) || (max(samples) > t)) {
+      stop("'samples' not valid: it must be a vector of integers between 1 and the number of iterations.")
     }
     sampled <- sample(samples, ceiling(length(samples) * frac_sampled))
   }
   # sort 'sampled' into ascending order
   sampled <- sort(sampled)
   # check the value of 'columns'
-  if(!(columns %in% c("k", "kstar"))) {
+  if((length(columns) != 1) || !(columns %in% c("k", "kstar"))) {
     stop("'columns' not valid: it must be 'k' or 'kstar'.")
   }
   # remove invalid strings from 'parameters'
