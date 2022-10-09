@@ -1,6 +1,6 @@
 #include <RcppArmadillo.h>
 #include "AGS_update.h"
-//#include "helper_functions.h"
+#include "helper_functions.h"
 #include "truncnorm_lg.h"
 #include "rcpp_pgdraw.h"
 using namespace Rcpp;
