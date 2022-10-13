@@ -40,7 +40,8 @@ Rcpp_AGS_SIS(
   prob,
   ps,
   p_constant,
-  q,
+  q_mean,
+  q_cov,
   rho,
   sd_b,
   sd_beta,
@@ -54,7 +55,8 @@ Rcpp_AGS_SIS(
   w,
   W,
   Wnull,
-  X
+  X_mean,
+  X_cov
 )
 }
 \arguments{
@@ -118,7 +120,9 @@ Rcpp_AGS_SIS(
 
 \item{p_constant}{Factor probability constant.}
 
-\item{q}{An integer number of meta-covariates.}
+\item{q_mean}{An integer number of meta-covariates.}
+
+\item{q_cov}{An integer number of meta-covariates.}
 
 \item{rho}{DA SCRIVERE}
 
@@ -146,7 +150,9 @@ Rcpp_AGS_SIS(
 
 \item{Wnull}{Boolean: if \code{true}, the matrix \code{W} of covariates is not considered.}
 
-\item{X}{A pxq matrix of meta-covariates.}
+\item{X_mean}{A pxq_mean matrix of meta-covariates.}
+
+\item{X_cov}{A pxq_cov matrix of meta-covariates.}
 }
 \value{
 A list.

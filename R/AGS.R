@@ -34,13 +34,15 @@
 #' The probability of occurrence of an adaptive iteration \eqn{t} as equal to \eqn{p(t)=\exp(b_0+b_1t)}, where \eqn{b_0} and \eqn{b_1} are positive constants, such that frequency of adaptation decreases.
 #'
 #' @param Y A \eqn{n\times p} matrix \eqn{y} of counts.
-#' @param X A matrix \eqn{x} of meta-covariates having \eqn{p} rows; the variables must be numeric or factors.
+#' @param X_mean A matrix \eqn{x} of meta-covariates used in the process mean having \eqn{p} rows; the variables must be numeric or factors.
+#' @param X_cov A matrix \eqn{x} of meta-covariates used in the SIS having \eqn{p} rows; the variables must be numeric or factors.
 #' @param W A matrix \eqn{w} of covariates having \eqn{n} rows; the variables must be numeric or factors.
 #' @param seed Seed. Default is 28.
 #' @param stdx Logical: if \code{TRUE}, numeric meta-covariates are standardized; by default meta-covariates are standardized.
 #' @param stdw Logical: if \code{TRUE}, numeric covariates are standardized; by default covariates are standardized.
-#' @param XFormula Formula specifying  the meta-covariates inserted in the model; by default all are considered.
-#' @param WFormula Formula specifying  the covariates inserted in the model; by default all are considered.
+#' @param XmeanFormula Formula specifying the meta-covariates used in the process mean inserted in the model.
+#' @param XcovFormula Formula specifying the meta-covariates used in the SIS inserted in the model.
+#' @param WFormula Formula specifying the covariates inserted in the model; by default all are considered.
 #' @param kinit An integer minimun number of latent factors. Default is \code{min(floor(log(p)*kval), p)}.
 #' @param kmax Maximum number of latent factors. Default is \code{p+1}.
 #' @param kval An integer number used to calculate the default value of \code{kinit}. Default is 6.
@@ -50,7 +52,7 @@
 #' @param start_adapt An integer number of iterations before adaptation. Default is 50.
 #' @param y_max A fixed and known upper bound for the values in \code{Y}. Default is \code{Inf}.
 # Parameters for SIS:
-#' @param b0,b1 Positive constants for the adaptive probability \eqn{p(t)=\exp(b_0+b_1t)}. Default is \eqn{b_0=1} and \eqn{b_1=5\times 10^{-4}}.
+#' @param b0,b1 Positive constants for the adaptive probability \eqn{p(t)=\exp(-b_0-b_1t)}. Default is \eqn{b_0=1} and \eqn{b_1=5\times 10^{-4}}.
 #' @param sd_b Standard deviation for \eqn{b_m}. Default is \eqn{\sigma_b=1}.
 #' @param sd_mu Standard deviation for \eqn{\mu_j}. Default is \eqn{\sigma_\mu=1}.
 #' @param sd_beta Standard deviation for \eqn{\beta_h}. Default is \eqn{\sigma_\beta=1}.
@@ -87,11 +89,12 @@
 #'
 #' @export
 AGS_SIS <- function(Y,
-                    X = NULL, W = NULL,
+                    X_mean = NULL, X_cov = X_mean, W = NULL,
                     seed = 28,
                     stdx = TRUE, stdw = TRUE,
                     WFormula = formula("~ ."),
-                    XFormula = formula("~ ."),
+                    XmeanFormula = formula("~ ."),
+                    XcovFormula = XmeanFormula,
                     kinit = NULL, kmax = NULL, kval = 6,
                     nrun = 100, burn = round(nrun/4), thin = 1,
                     start_adapt = 50,
@@ -121,27 +124,41 @@ AGS_SIS <- function(Y,
   n <- dim(Y)[1]
   p <- dim(Y)[2]
   # -------------------------------------------------------------------------- #
-  if(is.null(X)) {
-    X <- matrix(1, nrow = p, ncol = 1)
-  } else {
-    if(!is.data.frame(X) && !is.matrix(X)) {
-      stop("'X' not valid: it must be a matrix or a dataframe.")
+  if(is.null(X_mean)) {
+    X_mean <- matrix(1, nrow = p, ncol = 1)
+  }
+  if(is.null(X_cov)) {
+    X_cov <- matrix(1, nrow = p, ncol = 1)
+  }
+  if(!is.data.frame(X_mean) && !is.matrix(X_mean)) {
+    stop("'X_mean' not valid: it must be a matrix or a dataframe.")
+  }
+  if(!is.data.frame(X_cov) && !is.matrix(X_cov)) {
+    stop("'X_cov' not valid: it must be a matrix or a dataframe.")
+  }
+  if(p != nrow(X_mean)) {
+    stop("'Y' and 'X_mean' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_mean'.")
+  }
+  if(p != nrow(X_cov)) {
+    stop("'Y' and 'X_cov' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_cov'.")
+  }
+  if((length(stdx) != 1) || !is.logical(stdx)) {
+    stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
+  }
+  if(stdx) {
+    is.fact.xm = sapply(X_mean, is.factor)
+    X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
+    if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
+      X_mean <- model.matrix(XmeanFormula, X_mean)
     }
-    if(p != nrow(X)) {
-      stop("'Y' and 'X' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X'.")
-    }
-    if((length(stdx) != 1) || !is.logical(stdx)) {
-      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
-    }
-    if(stdx) {
-      is.fact.x <- sapply(X, is.factor)
-      X[, is.fact.x == FALSE] <- scale(X[, is.fact.x == FALSE])
-      if(is.data.frame(X) & dim(X)[2] > 1) {
-        X <- model.matrix(XFormula, X)
-      }
+    is.fact.xc <- sapply(X_cov, is.factor)
+    X_cov[, is.fact.xc == FALSE] <- scale(X_cov[, is.fact.xc == FALSE])
+    if(is.data.frame(X_cov) & ncol(X_cov) > 1) {
+      X_cov <- model.matrix(XcovFormula, X_cov)
     }
   }
-  q <- dim(X)[2]
+  q_mean <- ncol(X_mean)
+  q_cov <- ncol(X_cov)
   # -------------------------------------------------------------------------- #
   Wnull <- is.null(W)
   if(!Wnull) {
@@ -157,14 +174,11 @@ AGS_SIS <- function(Y,
     if(stdw) {
       is.fact.w <- sapply(W, is.factor)
       W[, is.fact.w == FALSE] <-  scale(W[, is.fact.w == FALSE])
-      if(is.data.frame(W) & dim(W)[2] > 1) {
+      if(is.data.frame(W) & ncol(W) > 1) {
         W <- model.matrix(WFormula, W)
       }
     }
     c <- ncol(W)
-  } else {
-    W <- matrix(1, nrow = 1, ncol = 1)
-    c <- 1
   }
   # -------------------------------------------------------------------------- #
   if((length(kval) != 1) || !is.numeric(kval) || (kval != round(kval))) {
@@ -263,8 +277,8 @@ AGS_SIS <- function(Y,
   # Z <- matrix(NA, nrow = n, ncol = p)
   # Initialize parameters related to the covariates, if W exists
   if(!Wnull) {
-    mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)  # mean coeff of the data
-    b_mu <- matrix(rnorm(q * c), nrow = c, ncol = q)          # x effects on mu coeff
+    mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)    # mean coeff of the data
+    b_mu <- matrix(rnorm(q_mean * c), nrow = c, ncol = q_mean)  # x effects on mu coeff
     # precision of mu and b_mu
     prec_b  <- 1 / (sd_b)  ^ 2
     prec_mu <- 1 / (sd_mu) ^ 2
@@ -274,12 +288,12 @@ AGS_SIS <- function(Y,
     prec_b <- prec_mu <- 0.1
   }
   # Initialize lambda star (pxq)
-  Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)  # loading matrix
+  Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)   # loading matrix
   # Initialize eta (nxk)
-  eta <- matrix(rnorm(n * k), nrow = n, ncol = k)          # latent factors
+  eta <- matrix(rnorm(n * k), nrow = n, ncol = k)           # latent factors
   # Initialize Beta (qxk) and pred (pxk)
-  Beta <- matrix(rnorm(q * k), nrow = q, ncol = k)  # traits effect on local shrinkage
-  pred <- X %*% Beta                                # local shrinkage coefficients
+  Beta <- matrix(rnorm(q_cov * k), nrow = q_cov, ncol = k)  # traits effect on local shrinkage
+  pred <- X_cov %*% Beta                                    # local shrinkage coefficients
   logit <- plogis(pred)
   # Initialize Phi pxk
   Phi <- matrix(rbinom(p * k, size = 1, prob = p_constant), nrow = p, ncol = k)
@@ -333,30 +347,31 @@ AGS_SIS <- function(Y,
                       n, nrun,
                       out,
                       p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant,
-                      q,
+                      q_mean, q_cov,
                       rho,
                       sd_b, sd_beta, sd_mu, sp, start_adapt,
                       thin,
                       uu,
                       v, verbose,
                       w, W, Wnull,
-                      X)
+                      X_mean, X_cov)
   # -------------------------------------------------------------------------- #
   for (it in 1:sp) {
     if("sigmacol" %in% output) out$sigmacol[[it]] <- c(out$sigmacol[[it]])
   }
-  out["numFactors"] <- c(out["numFactors"])
-  out["time"] <- (proc.time() - t0)[1]
+  out[["numFactors"]] <- c(out[["numFactors"]])
+  out[["time"]] <- (proc.time() - t0)[1]
   out[["model_prior"]] <- "SIS"
   out[["Y"]] <- Y                       # data               : nxp
   if(!Wnull) out[["W"]] <- W            # covariates         : nxc
-  out[["X"]] <- X                       # metacovariates     : pxq
+  out[["X_mean"]] <- X_mean             # metacovariates     : pxq_mean
+  out[["X_cov"]]  <- X_cov              # metacovariates     : pxq_cov
   out[["hyperparameters"]] <- list(alpha = alpha, a_theta = a_theta,
                                    b_theta = b_theta, sd_b = sd_b,
                                    sd_mu = sd_mu, sd_beta = sd_beta,
                                    as = as, bs = bs, p_constant = p_constant,
-                                   WFormula = WFormula, XFormula = XFormula,
-                                   y_max = y_max)
+                                   WFormula = WFormula, XmeanFormula = XmeanFormula,
+                                   XcovFormula = XcovFormula, y_max = y_max)
   # -------------------------------------------------------------------------- #
   return(out)
   # -------------------------------------------------------------------------- #

@@ -6,13 +6,15 @@
 \usage{
 AGS_SIS(
   Y,
-  X = NULL,
+  X_mean = NULL,
+  X_cov = X_mean,
   W = NULL,
   seed = 28,
   stdx = TRUE,
   stdw = TRUE,
   WFormula = formula("~ ."),
-  XFormula = formula("~ ."),
+  XmeanFormula = formula("~ ."),
+  XcovFormula = XmeanFormula,
   kinit = NULL,
   kmax = NULL,
   kval = 6,
@@ -39,7 +41,9 @@ AGS_SIS(
 \arguments{
 \item{Y}{A \eqn{n\times p} matrix \eqn{y} of counts.}
 
-\item{X}{A matrix \eqn{x} of meta-covariates having \eqn{p} rows; the variables must be numeric or factors.}
+\item{X_mean}{A matrix \eqn{x} of meta-covariates used in the process mean having \eqn{p} rows; the variables must be numeric or factors.}
+
+\item{X_cov}{A matrix \eqn{x} of meta-covariates used in the SIS having \eqn{p} rows; the variables must be numeric or factors.}
 
 \item{W}{A matrix \eqn{w} of covariates having \eqn{n} rows; the variables must be numeric or factors.}
 
@@ -49,9 +53,11 @@ AGS_SIS(
 
 \item{stdw}{Logical: if \code{TRUE}, numeric covariates are standardized; by default covariates are standardized.}
 
-\item{WFormula}{Formula specifying  the covariates inserted in the model; by default all are considered.}
+\item{WFormula}{Formula specifying the covariates inserted in the model; by default all are considered.}
 
-\item{XFormula}{Formula specifying  the meta-covariates inserted in the model; by default all are considered.}
+\item{XmeanFormula}{Formula specifying the meta-covariates used in the process mean inserted in the model.}
+
+\item{XcovFormula}{Formula specifying the meta-covariates used in the SIS inserted in the model.}
 
 \item{kinit}{An integer minimun number of latent factors. Default is \code{min(floor(log(p)*kval), p)}.}
 
@@ -67,7 +73,7 @@ AGS_SIS(
 
 \item{start_adapt}{An integer number of iterations before adaptation. Default is 50.}
 
-\item{b0, b1}{Positive constants for the adaptive probability \eqn{p(t)=\exp(b_0+b_1t)}. Default is \eqn{b_0=1} and \eqn{b_1=5\times 10^{-4}}.}
+\item{b0, b1}{Positive constants for the adaptive probability \eqn{p(t)=\exp(-b_0-b_1t)}. Default is \eqn{b_0=1} and \eqn{b_1=5\times 10^{-4}}.}
 
 \item{sd_b}{Standard deviation for \eqn{b_m}. Default is \eqn{\sigma_b=1}.}
 

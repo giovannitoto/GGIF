@@ -34,7 +34,8 @@
 #' @param prob DA SCRIVERE
 #' @param ps DA SCRIVERE
 #' @param p_constant Factor probability constant.
-#' @param q An integer number of meta-covariates.
+#' @param q_mean An integer number of meta-covariates.
+#' @param q_cov An integer number of meta-covariates.
 #' @param rho DA SCRIVERE
 #' @param sd_b Standard deviation for \eqn{b}.
 #' @param sd_beta Standard deviation for \eqn{\beta}.
@@ -48,13 +49,14 @@
 #' @param w DA SCRIVERE
 #' @param W A nxc matrix of covariates.
 #' @param Wnull Boolean: if \code{true}, the matrix \code{W} of covariates is not considered.
-#' @param X A pxq matrix of meta-covariates.
+#' @param X_mean A pxq_mean matrix of meta-covariates.
+#' @param X_cov A pxq_cov matrix of meta-covariates.
 #'
 #' @return A list.
 #' @note This function uses \code{Rcpp} for computational efficiency.
 #'
-Rcpp_AGS_SIS <- function(alpha, as, a_y, a_yp1, a_theta, Beta, bs, b0, b1, burn, b_mu, b_theta, c, d, eta, k, kmax, kstar, Lambda, Lambda_star, logit, mu, n, nrun, out, p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant, q, rho, sd_b, sd_beta, sd_mu, sp, start_adapt, thin, uu, v, verbose, w, W, Wnull, X) {
-    .Call(`_GGIF_Rcpp_AGS_SIS`, alpha, as, a_y, a_yp1, a_theta, Beta, bs, b0, b1, burn, b_mu, b_theta, c, d, eta, k, kmax, kstar, Lambda, Lambda_star, logit, mu, n, nrun, out, p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant, q, rho, sd_b, sd_beta, sd_mu, sp, start_adapt, thin, uu, v, verbose, w, W, Wnull, X)
+Rcpp_AGS_SIS <- function(alpha, as, a_y, a_yp1, a_theta, Beta, bs, b0, b1, burn, b_mu, b_theta, c, d, eta, k, kmax, kstar, Lambda, Lambda_star, logit, mu, n, nrun, out, p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant, q_mean, q_cov, rho, sd_b, sd_beta, sd_mu, sp, start_adapt, thin, uu, v, verbose, w, W, Wnull, X_mean, X_cov) {
+    .Call(`_GGIF_Rcpp_AGS_SIS`, alpha, as, a_y, a_yp1, a_theta, Beta, bs, b0, b1, burn, b_mu, b_theta, c, d, eta, k, kmax, kstar, Lambda, Lambda_star, logit, mu, n, nrun, out, p, Phi, Plam, prec_b, prec_mu, pred, prob, ps, p_constant, q_mean, q_cov, rho, sd_b, sd_beta, sd_mu, sp, start_adapt, thin, uu, v, verbose, w, W, Wnull, X_mean, X_cov)
 }
 
 #' Update b_mu in the Adaptive Gibbs Sampler

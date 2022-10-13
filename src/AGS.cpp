@@ -39,7 +39,8 @@ using namespace Rcpp;
 //' @param prob DA SCRIVERE
 //' @param ps DA SCRIVERE
 //' @param p_constant Factor probability constant.
-//' @param q An integer number of meta-covariates.
+//' @param q_mean An integer number of meta-covariates.
+//' @param q_cov An integer number of meta-covariates.
 //' @param rho DA SCRIVERE
 //' @param sd_b Standard deviation for \eqn{b}.
 //' @param sd_beta Standard deviation for \eqn{\beta}.
@@ -53,7 +54,8 @@ using namespace Rcpp;
 //' @param w DA SCRIVERE
 //' @param W A nxc matrix of covariates.
 //' @param Wnull Boolean: if \code{true}, the matrix \code{W} of covariates is not considered.
-//' @param X A pxq matrix of meta-covariates.
+//' @param X_mean A pxq_mean matrix of meta-covariates.
+//' @param X_cov A pxq_cov matrix of meta-covariates.
 //'
 //' @return A list.
 //' @note This function uses \code{Rcpp} for computational efficiency.
@@ -70,14 +72,14 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
           int n, int nrun,
           Rcpp::List out,
           int p, arma::mat Phi, arma::mat Plam, double prec_b, double prec_mu, arma::mat pred, arma::vec prob, arma::vec ps, double p_constant,
-          int q,
+          int q_mean, int q_cov,
           arma::vec rho,
           double sd_b, double sd_beta, double sd_mu, int sp, int start_adapt,
           int thin,
           arma::vec uu,
           arma::vec v, bool verbose,
           arma::vec w, arma::mat W, bool Wnull,
-          arma::mat X) {
+          arma::mat X_mean, arma::mat X_cov) {
   // ---------------------------------------------------------------------------
   // output
   Rcpp::List MU(sp);
@@ -110,7 +112,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
       // -----------------------------------------------------------------------
       //Rcout << "2  ";
       // 2 - update b_mu
-      b_mu = update_bmu(X, prec_mu, prec_b, mu, q, c);
+      b_mu = update_bmu(X_mean, prec_mu, prec_b, mu, q_mean, c);
       // -----------------------------------------------------------------------
       //Rcout << "3  ";
       // 3 - update mu
@@ -122,7 +124,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
         Qbet = prec_mu + trans(W) * W;
       }
       for (j = 0; j < p; j++) {
-        mu.row(j) = update_mu(j, Qbet, W, Z_res, ps, b_mu, X, c);
+        mu.row(j) = update_mu(j, Qbet, W, Z_res, ps, b_mu, X_mean, c);
       }
       Z = Z - W * trans(mu);
       // -----------------------------------------------------------------------
@@ -140,7 +142,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
     // -------------------------------------------------------------------------
     //Rcout << "6  ";
     // 6 - update beta
-    pred = X * Beta;
+    pred = X_cov * Beta;
     logit = arma::exp(pred) / (1 + arma::exp(pred));
     // 6.1 Update phi_L
     arma::mat Phi_L = arma::ones(p, k);
@@ -157,9 +159,9 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
       }
     }
     // 6.3 Update beta_h
-    arma::mat Bh_1 = arma::diagmat(arma::ones(q) / pow(sd_beta, 2));
+    arma::mat Bh_1 = arma::diagmat(arma::ones(q_cov) / pow(sd_beta, 2));
     for (h = 0; h < k; h++) {
-      Beta.col(h) = trans(update_beta(h, X, Dt, Bh_1, Phi_L, q));
+      Beta.col(h) = trans(update_beta(h, X_cov, Dt, Bh_1, Phi_L, q_cov));
     }
     // -------------------------------------------------------------------------
     //Rcout << "7  ";
@@ -194,7 +196,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
     // -------------------------------------------------------------------------
     //Rcout << "9  ";
     // 9 - update Phi
-    pred = X * Beta;
+    pred = X_cov * Beta;
     logit = arma::exp(pred) / (1 + arma::exp(pred));
     Phi = update_Phi(rho, logit, p_constant, p, n, eta, Lambda_star, Phi, Z, sdy, k);
     // -------------------------------------------------------------------------
@@ -233,7 +235,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
         Phi = arma::join_rows(Phi.cols(active), rbinom_vec(p, 1, p_constant));
         rho = join_elem(rho.elem(active), 1);
         Lambda = arma::join_rows(Lambda.cols(active), Lambda_star.col(k - 1) % Phi.col(k - 1));
-        Beta = arma::join_rows(Beta.cols(active), rnorm_vec(q, 0, sqrt(sd_beta)));
+        Beta = arma::join_rows(Beta.cols(active), rnorm_vec(q_cov, 0, sqrt(sd_beta)));
         w = join_elem(w.elem(active), 1 - sum(w.elem(active)));
         v = join_elem(v.elem(active), 1);
         d = join_elem(d.elem(active), k - 1);
@@ -248,7 +250,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
       Phi = arma::join_rows(Phi, rbinom_vec(p, 1, p_constant));
       rho = join_elem(rho, 1);
       Lambda = arma::join_rows(Lambda, Lambda_star.col(k - 1) % Phi.col(k - 1));
-      Beta = arma::join_rows(Beta, rnorm_vec(q, 0, sqrt(sd_beta)));
+      Beta = arma::join_rows(Beta, rnorm_vec(q_cov, 0, sqrt(sd_beta)));
       v(k - 2) = R::rbeta(1, alpha);
       v = join_elem(v, 1);
       w = v % join_elem(1, arma::cumprod(1 - v.head(k - 1)));

@@ -6,13 +6,15 @@
 \usage{
 AGS_SIS_R(
   Y,
-  X = NULL,
+  X_mean = NULL,
+  X_cov = X_mean,
   W = NULL,
   seed = 28,
   stdx = TRUE,
   stdw = TRUE,
   WFormula = formula("~ ."),
-  XFormula = formula("~ ."),
+  XmeanFormula = formula("~ ."),
+  XcovFormula = formula("~ ."),
   kinit = NULL,
   kmax = NULL,
   kval = 6,
@@ -39,7 +41,9 @@ AGS_SIS_R(
 \arguments{
 \item{Y}{A nxp matrix of counts.}
 
-\item{X}{A pxq matrix of meta-covariates; the variables must be numeric or factors.}
+\item{X_mean}{A pxq matrix of meta-covariates; the variables must be numeric or factors.}
+
+\item{X_cov}{A pxq matrix of meta-covariates; the variables must be numeric or factors.}
 
 \item{W}{A nxc matrix of covariates; the variables must be numeric or factors.}
 
@@ -51,7 +55,9 @@ AGS_SIS_R(
 
 \item{WFormula}{Formula specifying  the covariates inserted in the model.}
 
-\item{XFormula}{Formula specifying  the meta-covariates inserted in the model.}
+\item{XmeanFormula}{Formula specifying  the meta-covariates inserted in the model.}
+
+\item{XcovFormula}{Formula specifying  the meta-covariates inserted in the model.}
 
 \item{kinit}{An integer minimun number of latent factors. Default is \code{min(floor(log(p)*kval),p)}.}
 

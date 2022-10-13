@@ -3,12 +3,14 @@
 #' Implementation in R of the Adaptive Gibbs Sampler (AGS) for a Generalized Infinite Factor model with Structured Increasing Shrinkage (SIS) prior.
 #'
 #' @param Y A nxp matrix of counts.
-#' @param X A pxq matrix of meta-covariates; the variables must be numeric or factors.
+#' @param X_mean A pxq matrix of meta-covariates; the variables must be numeric or factors.
+#' @param X_cov A pxq matrix of meta-covariates; the variables must be numeric or factors.
 #' @param W A nxc matrix of covariates; the variables must be numeric or factors.
 #' @param seed Seed. Default is 28.
 #' @param stdx Boolean: if TRUE, numeric meta-covariates are standardized.
 #' @param stdw Boolean: if TRUE, numeric covariates are standardized.
-#' @param XFormula Formula specifying  the meta-covariates inserted in the model.
+#' @param XmeanFormula Formula specifying  the meta-covariates inserted in the model.
+#' @param XcovFormula Formula specifying  the meta-covariates inserted in the model.
 #' @param WFormula Formula specifying  the covariates inserted in the model.
 #' @param kinit An integer minimun number of latent factors. Default is \code{min(floor(log(p)*kval),p)}.
 #' @param kmax Maximum number of latent factors. Default is \code{p+1}.
@@ -41,11 +43,12 @@
 #'
 #' @export
 AGS_SIS_R <- function(Y,
-                      X = NULL, W = NULL,
+                      X_mean = NULL, X_cov = X_mean, W = NULL,
                       seed = 28,
                       stdx = TRUE, stdw = TRUE,
                       WFormula = formula("~ ."),
-                      XFormula = formula("~ ."),
+                      XmeanFormula = formula("~ ."),
+                      XcovFormula = formula("~ ."),
                       kinit = NULL, kmax = NULL, kval = 6,
                       nrun = 100, burn = round(nrun/4), thin = 1,
                       start_adapt = 50,
@@ -71,43 +74,67 @@ AGS_SIS_R <- function(Y,
   # -------------------------------------------------------------------------- #
   n <- dim(Y)[1]
   p <- dim(Y)[2]
-
-  if(is.null(X)) {
-    X <- matrix(1, nrow = p, ncol = 1)
-  } else {
-    if(p != nrow(X)) {
-      stop("'Y' and 'X' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X'.")
+  # -------------------------------------------------------------------------- #
+  if(is.null(X_mean)) {
+    X_mean <- matrix(1, nrow = p, ncol = 1)
+  }
+  if(is.null(X_cov)) {
+    X_cov <- matrix(1, nrow = p, ncol = 1)
+  }
+  if(!is.data.frame(X_mean) && !is.matrix(X_mean)) {
+    stop("'X_mean' not valid: it must be a matrix or a dataframe.")
+  }
+  if(!is.data.frame(X_cov) && !is.matrix(X_cov)) {
+    stop("'X_cov' not valid: it must be a matrix or a dataframe.")
+  }
+  if(p != nrow(X_mean)) {
+    stop("'Y' and 'X_mean' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_mean'.")
+  }
+  if(p != nrow(X_cov)) {
+    stop("'Y' and 'X_cov' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_cov'.")
+  }
+  if((length(stdx) != 1) || !is.logical(stdx)) {
+    stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
+  }
+  if(stdx) {
+    is.fact.xm = sapply(X_mean, is.factor)
+    X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
+    if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
+      X_mean <- model.matrix(XmeanFormula, X_mean)
     }
-    if((length(stdx) != 1) || !is.logical(stdx)) {
-      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
-    }
-    if(stdx) {
-      is.fact.x <- sapply(X, is.factor)
-      X[, is.fact.x == FALSE] <- scale(X[, is.fact.x == FALSE])
-      if(dim(X)[2] > 1) {
-        X <- model.matrix(XFormula, X)
-      }
+    is.fact.xc <- sapply(X_cov, is.factor)
+    X_cov[, is.fact.xc == FALSE] <- scale(X_cov[, is.fact.xc == FALSE])
+    if(is.data.frame(X_cov) & ncol(X_cov) > 1) {
+      X_cov <- model.matrix(XcovFormula, X_cov)
     }
   }
-  q <- dim(X)[2]
-
-  if(!is.null(W)) {
+  q_mean <- ncol(X_mean)
+  q_cov <- ncol(X_cov)
+  # -------------------------------------------------------------------------- #
+  Wnull <- is.null(W)
+  if(!Wnull) {
+    if(!is.data.frame(W) && !is.matrix(W)) {
+      stop("'W' not valid: it must be a matrix or a dataframe.")
+    }
     if(n != nrow(W)) {
       stop("'Y' and 'W' not compatible: they must have the same number of rows.")
     }
     if((length(stdw) != 1) || !is.logical(stdw)) {
       stop("'stdw' not valid: it must be 'TRUE' or 'FALSE'.")
     }
-    if(stdw){
+    if(stdw) {
       is.fact.w <- sapply(W, is.factor)
       W[, is.fact.w == FALSE] <-  scale(W[, is.fact.w == FALSE])
-      if(is.data.frame(W)) {
+      if(is.data.frame(W) & ncol(W) > 1) {
         W <- model.matrix(WFormula, W)
       }
     }
     c <- ncol(W)
   }
   # -------------------------------------------------------------------------- #
+  if((length(kval) != 1) || !is.numeric(kval) || (kval != round(kval))) {
+    stop("'kval' not valid: it must be an integer.")
+  }
   if(is.null(kinit)) {
     kinit <- min(floor(log(p) * kval), p)
   } else if((length(kinit) != 1) || !is.numeric(kinit) || (kinit != round(kinit))) {
@@ -118,8 +145,8 @@ AGS_SIS_R <- function(Y,
   } else if((length(kmax) != 1) || !is.numeric(kmax) || (kmax != round(kmax)) || (kmax < kinit)) {
     stop("'kmax' not valid: it must be an integer greater than or equal to 'kinit'.")
   }
-  k <- kinit                         # number of factors to start with (active and inactive)
-  kstar <- k - 1                     # number of active factors
+  k <- kinit       # number of factors to start with (active and inactive)
+  kstar <- k - 1   # number of active factors
   # -------------------------------------------------------------------------- #
   if((length(nrun) != 1) || !is.numeric(nrun) || (nrun != round(nrun))) {
     stop("'nrun' not valid: it must be an integer.")
@@ -128,7 +155,7 @@ AGS_SIS_R <- function(Y,
     stop("'burn' not valid: it must be an integer less than 'nrun'.")
   }
   if((length(thin) != 1) || !is.numeric(thin) || (thin != round(thin)) || (thin > nrun - burn)) {
-    stop("'thin' not valid: it must be an integer greater than or equal to 'nrun - burn'.")
+    stop("'thin' not valid: it must be an integer less than or equal to 'nrun - burn'.")
   }
   if((length(start_adapt) != 1) || !is.numeric(start_adapt) || (start_adapt != round(start_adapt))) {
     stop("'start_adapt' not valid: it must be an integer.")
@@ -191,33 +218,40 @@ AGS_SIS_R <- function(Y,
   if((length(bs) != 1) || !is.numeric(bs) || (bs <= 0)) {
     stop("'bs' not valid: it must be greater than 0.")
   }
+  if((length(alpha) != 1) || !is.numeric(alpha) || (alpha < 0)) {
+    stop("'alpha' not valid: it must be greater than or equal to 0.")
+  }
   # -------------------------------------------------------------------------- #
   # Initialize sigma^-2
   ps <- rgamma(p, as, bs)
   # Initialize the nxp matrix of latent normal variables
-  Z <- matrix(NA, nrow = n, ncol = p)
+  # Z <- matrix(NA, nrow = n, ncol = p)
   # Initialize parameters related to the covariates, if W exists
-  if(!is.null(W)) {
-    mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)  # mean coeff of the data
-    b_mu <- matrix(rnorm(q * c), nrow = c, ncol = q)          # x effects on mu coeff
+  if(!Wnull) {
+    mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)    # mean coeff of the data
+    b_mu <- matrix(rnorm(q_mean * c), nrow = c, ncol = q_mean)  # x effects on mu coeff
     # precision of mu and b_mu
     prec_b  <- 1 / (sd_b)  ^ 2
     prec_mu <- 1 / (sd_mu) ^ 2
+  } else {
+    # not used but necessary to call the C++ function
+    mu <- b_mu <- matrix(1, nrow = 1, ncol = 1)
+    prec_b <- prec_mu <- 0.1
   }
   # Initialize lambda star (pxq)
-  Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)  # loading matrix
+  Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)   # loading matrix
   # Initialize eta (nxk)
-  eta <- matrix(rnorm(n * k), nrow = n, ncol = k)          # latent factors
+  eta <- matrix(rnorm(n * k), nrow = n, ncol = k)           # latent factors
   # Initialize Beta (qxk) and pred (pxk)
-  Beta <- matrix(rnorm(q * k), nrow = q, ncol = k)  # traits effect on local shrinkage
-  pred <- X %*% Beta                                # local shrinkage coefficients
+  Beta <- matrix(rnorm(q_cov * k), nrow = q_cov, ncol = k)  # traits effect on local shrinkage
+  pred <- X_cov %*% Beta                                    # local shrinkage coefficients
   logit <- plogis(pred)
   # Initialize Phi pxk
   Phi <- matrix(rbinom(p * k, size = 1, prob = p_constant), nrow = p, ncol = k)
   # Initialize pi_h, h = 1, ..., k
   v <- c(rbeta(k - 1, shape1 = 1, shape2 = alpha), 1)
   w <- v * c(1, cumprod(1 - v[-k]))  # product up to  l - 1
-  d <- rep(k, k)                     # augmented data
+  d <- rep(k - 1, k)                 # augmented data
   rho <- rep(1, k)                   # preallocation for Bernoulli
   # Initialize the precision matrix of lambda star
   Plam <- diag(rgamma(k, a_theta, b_theta))
@@ -230,14 +264,14 @@ AGS_SIS_R <- function(Y,
                      "beta",        # shrinkCoefSamples    : qxk
                      "eta",         # etaval               : nxk
                      "lambda",      # loadSamples          : pxk
-                     "sigmacol",    # sigmacol (1/sigma^2) : p
-                     "numFactors"   # numFactors (kstar)   : t
+                     "sigmacol"     # sigmacol (1/sigma^2) : p
   )
   if("all" %in% output) {
     output <- valid_outputs
   } else {
     output <- intersect(output, valid_outputs)
   }
+  # -------------------------------------------------------------------------- #
   if(!is.null(W)) {
     if("mu" %in% output) MU <- list()
     if("bmu" %in% output) BMU <- list()
@@ -246,7 +280,7 @@ AGS_SIS_R <- function(Y,
   if("eta" %in% output) ETA <- list()
   if("lambda" %in% output) LAMBDA <- list()
   if("sigmacol" %in% output) sig <- list()
-  if("numFactors" %in% output) K <- rep(NA, sp)
+  K <- rep(NA, sp)
   # -------------------------------------------------------------------------- #
   # ADAPTIVE GIBBS SAMPLING
   # -------------------------------------------------------------------------- #
@@ -270,7 +304,7 @@ AGS_SIS_R <- function(Y,
     if(!is.null(W)) {
       # ---------------------------------------------------------------------- #
       # 2 - update b_mu
-      b_mu <- update_b_mu_R(X, prec_mu, prec_b, mu, q, c)
+      b_mu <- update_b_mu_R(X_mean, prec_mu, prec_b, mu, q_mean, c)
       # ---------------------------------------------------------------------- #
       # 3 - update mu
       Z_res <- Z - tcrossprod(eta, Lambda)
@@ -282,7 +316,7 @@ AGS_SIS_R <- function(Y,
       # mu <- t(sapply(1:p, update_mu_R, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
       #                b_mu=b_mu, Xcov=X, c=c))
       for(j in 1:p) {
-        mu[j, ] <- update_mu_R(j, Qbet, W, Z_res, ps, b_mu, X, c)
+        mu[j, ] <- update_mu_R(j, Qbet, W, Z_res, ps, b_mu, X_mean, c)
       }
       Z <- Z - tcrossprod(W, mu)
       # ---------------------------------------------------------------------- #
@@ -295,7 +329,7 @@ AGS_SIS_R <- function(Y,
     ps <- rgamma(p, as + 0.5 * n, bs + 0.5 * colSums(Z_res ^ 2))
     # ------------------------------------------------------------------------ #
     # 6 - update beta
-    pred <- X %*% Beta
+    pred <- X_cov %*% Beta
     logit <- plogis(pred)
     # 6.2 Update phi_L
     Phi_L <- matrix(1, nrow = p, ncol = k)
@@ -305,9 +339,9 @@ AGS_SIS_R <- function(Y,
     # 6.3 Polya gamma
     Dt <- matrix(pgdraw::pgdraw(1, pred), nrow = p, ncol = k)
     # 6.4 Update beta_h
-    Bh_1 <- diag(rep(sd_beta^2, q) ^ {-1})
+    Bh_1 <- diag(rep(sd_beta^2, q_cov) ^ {-1})
     for(h in 1:k) {
-      Beta[, h] <- update_beta_R(h, X, Dt, Bh_1, Phi_L, q)
+      Beta[, h] <- update_beta_R(h, X_cov, Dt, Bh_1, Phi_L, q_cov)
     }
     # Beta <- sapply(1:k, update_beta_R, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
     # if(q==1) Beta <- matrix(Beta, nrow=1, ncol=k)
@@ -341,7 +375,7 @@ AGS_SIS_R <- function(Y,
     w <- v * c(1, cumprod(1 - v[-k]))
     # ------------------------------------------------------------------------ #
     # 9 - update Phi
-    pred <- X %*% Beta
+    pred <- X_cov %*% Beta
     logit <- plogis(pred)
     Phi <- update_Phi_R(rho, logit, p_constant, p, n,
                         eta, Lambda_star, Phi, Z, sdy)
@@ -356,7 +390,7 @@ AGS_SIS_R <- function(Y,
       if("eta" %in% output) ETA[[ind]] <- eta
       if("lambda" %in% output) LAMBDA[[ind]] <- Lambda
       if("sigmacol" %in% output) sig[[ind]] <- ps
-      if("numFactors" %in% output) K[ind] <- kstar
+      K[ind] <- kstar
       ind <- ind + 1
     }
     # ------------------------------------------------------------------------ #
@@ -374,7 +408,7 @@ AGS_SIS_R <- function(Y,
         Phi <- cbind(Phi[, active, drop = FALSE], rbinom(p, size = 1, prob = p_constant))
         rho <- c(rho[active, drop = FALSE], 1)
         Lambda <- cbind(Lambda[, active, drop = FALSE], Lambda_star[, k] * sqrt(rho[k]) * Phi[, k])
-        Beta <- cbind(Beta[, active, drop = FALSE], rnorm(q, 0, sd = sqrt(sd_beta)))
+        Beta <- cbind(Beta[, active, drop = FALSE], rnorm(q_cov, 0, sd = sqrt(sd_beta)))
         w <- c(w[active, drop = FALSE], 1 - sum(w[active, drop = FALSE]))
         v <- c(v[active, drop = FALSE], 1)  # just to allocate memory
         d <- c(d[active, drop = FALSE], k)
@@ -388,7 +422,7 @@ AGS_SIS_R <- function(Y,
         Phi <- cbind(Phi, rbinom(p, size = 1, prob = p_constant))
         rho <- c(rho, 1)
         Lambda <- cbind(Lambda, Lambda_star[, k] * sqrt(rho[k]) * Phi[, k])
-        Beta <- cbind(Beta, rnorm(q, 0, sd = sqrt(sd_beta)))
+        Beta <- cbind(Beta, rnorm(q_cov, 0, sd = sqrt(sd_beta)))
         v[k-1] <- rbeta(1, shape1 = 1, shape2 = alpha)
         v <- c(v, 1)
         w <- v * c(1, cumprod(1 - v[-k]))
@@ -406,20 +440,21 @@ AGS_SIS_R <- function(Y,
     if(x == "eta") return(ETA)          # shrinkCoefSamples  : qxk
     if(x == "lambda") return(LAMBDA)    # etaval             : nxk
     if(x == "sigmacol") return(sig)     # sigmacol           : p
-    if(x == "numFactors") return(K)     # numFactors (kstar) : t
   })
   names(out) <- output
-  out["time"] <- (proc.time() - t0)[1]
+  out[["numFactors"]] <- K
+  out[["time"]] <- (proc.time() - t0)[1]
   out[["model_prior"]] <- "SIS"
   out[["Y"]] <- Y                       # data               : nxp
   if(!is.null(W)) out[["W"]] <- W       # covariates         : nxc
-  out[["X"]] <- X                       # metacovariates     : pxq
+  out[["X_mean"]] <- X_mean             # metacovariates     : pxq_mean
+  out[["X_cov"]]  <- X_cov              # metacovariates     : pxq_cov
   out[["hyperparameters"]] <- list(alpha = alpha, a_theta = a_theta,
                                    b_theta = b_theta, sd_b = sd_b,
                                    sd_mu = sd_mu, sd_beta = sd_beta,
                                    as = as, bs = bs, p_constant = p_constant,
-                                   WFormula = WFormula, XFormula = XFormula,
-                                   y_max = y_max)
+                                   WFormula = WFormula, XmeanFormula = XmeanFormula,
+                                   XcovFormula = XcovFormula, y_max = y_max)
   # -------------------------------------------------------------------------- #
   return(out)
   # -------------------------------------------------------------------------- #

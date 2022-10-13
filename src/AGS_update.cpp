@@ -30,8 +30,8 @@ using namespace Rcpp;
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
-                           arma::mat mu, int q, int c) {
+arma::mat update_bmu(const arma::mat& X, double prec_mu, double prec_b,
+                     const arma::mat& mu, int q, int c) {
   arma::mat Trsg = X * prec_mu;
   arma::mat Vgmbeta1(q, q);
   if (q > 1) {
@@ -87,8 +87,8 @@ arma::mat update_bmu(arma::mat X, double prec_mu, double prec_b,
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-arma::mat update_mu(int j, arma::mat Qbet, arma::mat W, arma::mat Z_res,
-                    arma::vec ps, arma::mat b_mu, arma::mat Xcov, int c) {
+arma::mat update_mu(int j, const arma::mat& Qbet, const arma::mat& W, const arma::mat& Z_res,
+                    const arma::vec& ps, const arma::mat& b_mu, const arma::mat& Xcov, int c) {
   arma::mat Lbet = trans(arma::chol(Qbet));
   arma::vec bbet = trans(W) * Z_res.col(j) + ps(j) * trans(b_mu) * trans(Xcov.row(j));
   // mean
@@ -116,7 +116,7 @@ arma::mat update_mu(int j, arma::mat Qbet, arma::mat W, arma::mat Z_res,
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) {
+arma::mat update_eta(const arma::mat& Lambda, const arma::vec& ps, int k, const arma::mat& Z, int n) {
   arma::mat Lmsg = Lambda.each_col() % ps;
   arma::mat Veta1(k, k);
   if (k > 1) {
@@ -170,8 +170,8 @@ arma::mat update_eta(arma::mat Lambda, arma::vec ps, int k, arma::mat Z, int n) 
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-arma::mat update_beta(int h, arma::mat Xcov, arma::mat Dt,
-                      arma::mat Bh_1, arma::mat Phi_L, int q) {
+arma::mat update_beta(int h, const arma::mat& Xcov, const arma::mat& Dt,
+                      const arma::mat& Bh_1, const arma::mat& Phi_L, int q) {
   arma::mat Qbeta = trans(Xcov.each_col() % Dt.col(h)) * Xcov + Bh_1;
   arma::mat Lbeta = trans(arma::chol(Qbeta));
   arma::vec bbeta = trans(Xcov) * (Phi_L.col(h) - 0.5);
@@ -202,8 +202,8 @@ arma::mat update_beta(int h, arma::mat Xcov, arma::mat Dt,
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-arma::mat update_Lambda_star(int j, arma::mat etarho, arma::mat Phi,
-                             arma::mat Plam, arma::vec ps, arma::mat Z, int k) {
+arma::mat update_Lambda_star(int j, const arma::mat& etarho, const arma::mat& Phi,
+                             const arma::mat& Plam, const arma::vec& ps, const arma::mat& Z, int k) {
   arma::mat etaj = trans(etarho.each_col() % trans(Phi.row(j)));
   arma::mat Qlam = Plam + ps(j) * trans(etaj) * etaj;
   arma::mat Llam = trans(arma::chol(Qlam));
@@ -239,9 +239,9 @@ arma::mat update_Lambda_star(int j, arma::mat etarho, arma::mat Phi,
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-int update_d(int h, arma::mat Phi, int p, int n, arma::vec rho,
-             arma::mat eta, arma::mat lambdastar, arma::mat Z,
-             arma::mat sdy, int k, arma::vec w) {
+int update_d(int h, const arma::mat& Phi, int p, int n, const arma::vec& rho,
+             const arma::mat& eta, const arma::mat& lambdastar, const arma::mat& Z,
+             const arma::mat& sdy, int k, const arma::vec& w) {
   int i, j, l;
   double lnorm0 = 0.0, lnorm1 = 0.0;
   for (i = 0; i < n; i++) {
@@ -301,9 +301,9 @@ int update_d(int h, arma::mat Phi, int p, int n, arma::vec rho,
 //' @note This function uses \code{Rcpp} for computational efficiency.
 //'
 // [[Rcpp::export]]
-arma::mat update_Phi(arma::vec rho, arma::mat logit, double p_constant,
-                     int p, int n, arma::mat eta, arma::mat lambdastar,
-                     arma::mat Phi, arma::mat Z, arma::mat sdy, int k) {
+arma::mat update_Phi(const arma::vec& rho, const arma::mat& logit, double p_constant,
+                     int p, int n, const arma::mat& eta, const arma::mat& lambdastar,
+                     arma::mat& Phi, const arma::mat& Z, const arma::mat& sdy, int k) {
   // define variables
   int i, j, l, h;
   arma::uword f;
