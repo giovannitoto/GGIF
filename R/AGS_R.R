@@ -39,8 +39,6 @@
 #'
 #' @importFrom stats formula model.matrix plogis rbeta rbinom rgamma rnorm runif
 #'
-#' @import mathjaxr
-#'
 #' @export
 AGS_SIS_R <- function(Y,
                       X_mean = NULL, X_cov = X_mean, W = NULL,

@@ -37,7 +37,6 @@
 #'
 #' @importFrom stats formula model.matrix plogis rbeta rbinom rgamma rnorm runif
 #'
-#' @import mathjaxr
 #' @import RcppArmadillo
 #'
 #' @export
