@@ -227,14 +227,10 @@ AGS_SIS_R <- function(Y,
   # Initialize parameters related to the covariates, if W exists
   if(!Wnull) {
     mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)    # mean coeff of the data
-    b_mu <- matrix(rnorm(q_mean * c), nrow = c, ncol = q_mean)  # x effects on mu coeff
+    b_mu <- matrix(rnorm(q_mean * c), nrow = q_mean, ncol = c)  # x effects on mu coeff
     # precision of mu and b_mu
     prec_b  <- 1 / (sd_b)  ^ 2
     prec_mu <- 1 / (sd_mu) ^ 2
-  } else {
-    # not used but necessary to call the C++ function
-    mu <- b_mu <- matrix(1, nrow = 1, ncol = 1)
-    prec_b <- prec_mu <- 0.1
   }
   # Initialize lambda star (pxq)
   Lambda_star <- matrix(rnorm(p * k), nrow = p, ncol = k)   # loading matrix
@@ -249,7 +245,7 @@ AGS_SIS_R <- function(Y,
   # Initialize pi_h, h = 1, ..., k
   v <- c(rbeta(k - 1, shape1 = 1, shape2 = alpha), 1)
   w <- v * c(1, cumprod(1 - v[-k]))  # product up to  l - 1
-  d <- rep(k - 1, k)                 # augmented data
+  d <- rep(k, k)                 # augmented data
   rho <- rep(1, k)                   # preallocation for Bernoulli
   # Initialize the precision matrix of lambda star
   Plam <- diag(rgamma(k, a_theta, b_theta))
