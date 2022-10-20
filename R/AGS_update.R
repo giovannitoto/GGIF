@@ -241,7 +241,11 @@ update_Phi_R <- function(rho, logit, p_constant, p, n,
   ih <- 0
   for(h in wr) {
     ih <- ih + 1
-    muijh <- rowSums(etalambdastar[, -ih] * Phi[rep(1:p, each=n), wr[-ih]])
+    if(length(wr) < 3) {
+      muijh <- sum(etalambdastar[, -ih] * Phi[rep(1:p, each=n), wr[-ih]])
+    } else {
+      muijh <- rowSums(etalambdastar[, -ih] * Phi[rep(1:p, each=n), wr[-ih]])
+    }
     lnorm0 <- tapply(dnorm(Z, mean = muijh, sd = sdy, log=T), rep(1:p, each=n), FUN = sum)
     lnorm1 <- tapply(dnorm(Z, mean = muijh + etalambdastar[, ih] * rho[h], sd = sdy, log=T), rep(1:p, each=n), FUN = sum)
     # adjust scale
