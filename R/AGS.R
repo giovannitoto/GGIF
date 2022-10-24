@@ -121,35 +121,41 @@ AGS_SIS <- function(Y,
   if(!is.data.frame(Y) && !is.matrix(Y)) {
     stop("'Y' not valid: it must be a matrix or a dataframe.")
   }
+  # -------------------------------------------------------------------------- #
   n <- dim(Y)[1]
   p <- dim(Y)[2]
   # -------------------------------------------------------------------------- #
   if(is.null(X_mean)) {
     X_mean <- matrix(1, nrow = p, ncol = 1)
+  } else {
+    if(!is.data.frame(X_mean) && !is.matrix(X_mean)) {
+      stop("'X_mean' not valid: it must be a matrix or a dataframe.")
+    }
+    if(p != nrow(X_mean)) {
+      stop("'Y' and 'X_mean' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_mean'.")
+    }
+    if((length(stdx) != 1) || !is.logical(stdx)) {
+      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
+    }
+    if(stdx) {
+      is.fact.xm = sapply(X_mean, is.factor)
+      X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
+      if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
+        X_mean <- model.matrix(XmeanFormula, X_mean)
+      }
+    }
   }
   if(is.null(X_cov)) {
-    X_cov <- matrix(1, nrow = p, ncol = 1)
-  }
-  if(!is.data.frame(X_mean) && !is.matrix(X_mean)) {
-    stop("'X_mean' not valid: it must be a matrix or a dataframe.")
-  }
-  if(!is.data.frame(X_cov) && !is.matrix(X_cov)) {
-    stop("'X_cov' not valid: it must be a matrix or a dataframe.")
-  }
-  if(p != nrow(X_mean)) {
-    stop("'Y' and 'X_mean' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_mean'.")
-  }
-  if(p != nrow(X_cov)) {
-    stop("'Y' and 'X_cov' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_cov'.")
-  }
-  if((length(stdx) != 1) || !is.logical(stdx)) {
-    stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
-  }
-  if(stdx) {
-    is.fact.xm = sapply(X_mean, is.factor)
-    X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
-    if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
-      X_mean <- model.matrix(XmeanFormula, X_mean)
+    X_cov <- X_mean
+  } else {
+    if(!is.data.frame(X_cov) && !is.matrix(X_cov)) {
+      stop("'X_cov' not valid: it must be a matrix or a dataframe.")
+    }
+    if(p != nrow(X_cov)) {
+      stop("'Y' and 'X_cov' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_cov'.")
+    }
+    if((length(stdx) != 1) || !is.logical(stdx)) {
+      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
     }
     is.fact.xc <- sapply(X_cov, is.factor)
     X_cov[, is.fact.xc == FALSE] <- scale(X_cov[, is.fact.xc == FALSE])
@@ -179,6 +185,9 @@ AGS_SIS <- function(Y,
       }
     }
     c <- ncol(W)
+  } else {
+    W <- matrix(1, nrow = 1, ncol = 1)
+    c <- 1
   }
   # -------------------------------------------------------------------------- #
   if((length(kval) != 1) || !is.numeric(kval) || (kval != round(kval))) {
@@ -278,7 +287,7 @@ AGS_SIS <- function(Y,
   # Initialize parameters related to the covariates, if W exists
   if(!Wnull) {
     mu <- matrix(rnorm(c * p, 0, sd_mu), nrow = p, ncol = c)    # mean coeff of the data
-    b_mu <- matrix(rnorm(q_mean * c), nrow = c, ncol = q_mean)  # x effects on mu coeff
+    b_mu <- matrix(rnorm(q_mean * c), nrow = q_mean, ncol = c)  # x effects on mu coeff
     # precision of mu and b_mu
     prec_b  <- 1 / (sd_b)  ^ 2
     prec_mu <- 1 / (sd_mu) ^ 2

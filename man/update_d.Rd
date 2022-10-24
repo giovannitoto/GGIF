@@ -4,7 +4,7 @@
 \alias{update_d}
 \title{Update the hth element of d in the Adaptive Gibbs Sampler}
 \usage{
-update_d(h, Phi, p, n, rho, eta, lambdastar, Z, sdy, k, w)
+update_d(h, Phi, p, n, rho, eta, lambdastar, Z, ps, k, w)
 }
 \arguments{
 \item{h}{An integer.}
@@ -23,7 +23,7 @@ update_d(h, Phi, p, n, rho, eta, lambdastar, Z, sdy, k, w)
 
 \item{Z}{A nxp matrix.}
 
-\item{sdy}{A nxp matrix.}
+\item{ps}{A p-dimensional vector.}
 
 \item{k}{An integer.}
 

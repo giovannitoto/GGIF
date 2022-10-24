@@ -230,7 +230,7 @@ arma::mat update_Lambda_star(int j, const arma::mat& etarho, const arma::mat& Ph
 //' @param eta A nxk matrix.
 //' @param lambdastar A pxk matrix.
 //' @param Z A nxp matrix.
-//' @param sdy A nxp matrix.
+//' @param ps A p-dimensional vector.
 //' @param k An integer.
 //' @param w A k-dimensional vector.
 //'
@@ -241,20 +241,21 @@ arma::mat update_Lambda_star(int j, const arma::mat& etarho, const arma::mat& Ph
 // [[Rcpp::export]]
 int update_d(int h, const arma::mat& Phi, int p, int n, const arma::vec& rho,
              const arma::mat& eta, const arma::mat& lambdastar, const arma::mat& Z,
-             const arma::mat& sdy, int k, const arma::vec& w) {
+             const arma::vec& ps, int k, const arma::vec& w) {
   int i, j, l;
   double lnorm0 = 0.0, lnorm1 = 0.0;
+  arma::vec sdy = sqrt(1 / ps);
   for (i = 0; i < n; i++) {
     for (j = 0; j < p; j++) {
       // initialize mean
-      double muijh = -1 * sqrt(rho(h) * Phi(j, h)) * lambdastar(j, h) * eta(i, h);
+      double muijh = -1 * sqrt(rho(h)) * Phi(j, h) * lambdastar(j, h) * eta(i, h);
       for (l = 0; l < k; l++) {
-        muijh += sqrt(rho(l) * Phi(j, l)) * lambdastar(j, l) * eta(i, l);
+        muijh += sqrt(rho(l)) * Phi(j, l) * lambdastar(j, l) * eta(i, l);
       }
-      lnorm0 += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
+      lnorm0 += R::dnorm(Z(i, j), muijh, sdy(j), 1);
       // update mean
       muijh += Phi(j, h) * lambdastar(j, h) * eta(i, h);
-      lnorm1 += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
+      lnorm1 += R::dnorm(Z(i, j), muijh, sdy(j), 1);
     }
   }
   // adjust the scale
@@ -293,7 +294,7 @@ int update_d(int h, const arma::mat& Phi, int p, int n, const arma::vec& rho,
 //' @param lambdastar A pxk matrix.
 //' @param Phi A pxk matrix.
 //' @param Z A nxp matrix.
-//' @param sdy A nxp matrix.
+//' @param ps A p-dimensional vector.
 //' @param k An integer.
 //'
 //' @return A pxk matrix.
@@ -303,13 +304,14 @@ int update_d(int h, const arma::mat& Phi, int p, int n, const arma::vec& rho,
 // [[Rcpp::export]]
 arma::mat update_Phi(const arma::vec& rho, const arma::mat& logit, double p_constant,
                      int p, int n, const arma::mat& eta, const arma::mat& lambdastar,
-                     arma::mat& Phi, const arma::mat& Z, const arma::mat& sdy, int k) {
+                     arma::mat& Phi, const arma::mat& Z, const arma::vec& ps, int k) {
   // define variables
   int i, j, l, h;
   arma::uword f;
   arma::vec p_phi0(p), p_phi1(p), p_phi_sum(p), lnorm0(p), lnorm1(p);
   arma::uvec wr0 = find(rho == 0);
   arma::uvec wr1 = find(rho == 1);
+  arma::vec sdy = sqrt(1 / ps);
   // update for inactive factors
   for (f = 0; f < wr0.n_elem; f++) {
     h = wr0(f);
@@ -332,10 +334,10 @@ arma::mat update_Phi(const arma::vec& rho, const arma::mat& logit, double p_cons
         for (l = 0; l < k; l++) {
             muijh += rho(l) * Phi(j, l) * lambdastar(j, l) * eta(i, l);
         }
-        lnorm0(j) += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
+        lnorm0(j) += R::dnorm(Z(i, j), muijh, sdy(j), 1);
         // update mean
         muijh += rho(h) * lambdastar(j, h) * eta(i, h);
-        lnorm1(j) += R::dnorm(Z(i, j), muijh, sdy(i, j), 1);
+        lnorm1(j) += R::dnorm(Z(i, j), muijh, sdy(j), 1);
       }
       // adjust the scale
       double mlnorm = std::max(lnorm0(j), lnorm1(j));

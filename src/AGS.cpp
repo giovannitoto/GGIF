@@ -106,7 +106,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
       Zmean = eta * trans(Lambda) + W * trans(mu);
     }
     arma::mat n_unif = runif_mat(n, p, 0, 1);
-    arma::mat Z = truncnorm_lg(log(a_y), log(a_yp1), Zmean, 1 / sqrt(ps), n_unif);
+    arma::mat Z = truncnorm_lg(log(a_y), log(a_yp1), Zmean, sqrt(1 / ps), n_unif);
     // -------------------------------------------------------------------------
     if(!Wnull) {
       // -----------------------------------------------------------------------
@@ -146,7 +146,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
     logit = arma::exp(pred) / (1 + arma::exp(pred));
     // 6.1 Update phi_L
     arma::mat Phi_L = arma::ones(p, k);
-    arma::uvec Phi0 = arma::find(Phi==0);
+    arma::uvec Phi0 = arma::find(Phi == 0);
     arma::vec logit_phi0 = logit.elem(Phi0);
     arma::uvec which_zero = arma::randu(logit_phi0.n_elem) < (1 - logit_phi0) / (1 - logit_phi0 * p_constant);
     Phi_L.elem(Phi0.elem(arma::find(which_zero))) -= 1;
@@ -174,10 +174,8 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
     // -------------------------------------------------------------------------
     //Rcout << "8  ";
     // 8.1 - update d
-    arma::mat sdy = arma::zeros(n, p);
-    sdy.each_row() += 1 / trans(sqrt(ps));
     for (h = 0; h < k; h++) {
-      d(h) = update_d(h, Phi, p, n, rho, eta, Lambda_star, Z, sdy, k, w);
+      d(h) = update_d(h, Phi, p, n, rho, eta, Lambda_star, Z, ps, k, w);
     }
     rho = arma::ones(k);
     rho.elem(find(d <= arma::linspace<arma::vec>(0, k - 1, k))) -= 1;
@@ -198,7 +196,7 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
     // 9 - update Phi
     pred = X_cov * Beta;
     logit = arma::exp(pred) / (1 + arma::exp(pred));
-    Phi = update_Phi(rho, logit, p_constant, p, n, eta, Lambda_star, Phi, Z, sdy, k);
+    Phi = update_Phi(rho, logit, p_constant, p, n, eta, Lambda_star, Phi, Z, ps, k);
     // -------------------------------------------------------------------------
     //Rcout << "save  ";
     // save sampled values (after burn-in period)
@@ -219,10 +217,8 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
     // Adaptation
     if (uu(it) < prob(it) && (it + 1) > start_adapt) {
       arma::uvec active = find(d > arma::linspace<arma::vec>(0, k - 1, k));
-      kstar = 0;
-      for (arma::uword uw = 0; uw < active.n_elem; uw++) {
-        kstar += 1;
-      }
+      int kstar_new = active.n_elem;
+      kstar = kstar_new;
       //Rcout << it+1 << " : "<< (kstar < k - 1) << " - " << (k < kmax) << "\n";
       if (kstar < k - 1) {
         // set truncation to kstar and subset all variables, keeping only active columns

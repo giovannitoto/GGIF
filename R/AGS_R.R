@@ -41,7 +41,7 @@
 #'
 #' @export
 AGS_SIS_R <- function(Y,
-                      X_mean = NULL, X_cov = X_mean, W = NULL,
+                      X_mean = NULL, X_cov = NULL, W = NULL,
                       seed = 28,
                       stdx = TRUE, stdw = TRUE,
                       WFormula = formula("~ ."),
@@ -75,30 +75,35 @@ AGS_SIS_R <- function(Y,
   # -------------------------------------------------------------------------- #
   if(is.null(X_mean)) {
     X_mean <- matrix(1, nrow = p, ncol = 1)
+  } else {
+    if(!is.data.frame(X_mean) && !is.matrix(X_mean)) {
+      stop("'X_mean' not valid: it must be a matrix or a dataframe.")
+    }
+    if(p != nrow(X_mean)) {
+      stop("'Y' and 'X_mean' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_mean'.")
+    }
+    if((length(stdx) != 1) || !is.logical(stdx)) {
+      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
+    }
+    if(stdx) {
+      is.fact.xm = sapply(X_mean, is.factor)
+      X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
+      if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
+        X_mean <- model.matrix(XmeanFormula, X_mean)
+      }
+    }
   }
   if(is.null(X_cov)) {
-    X_cov <- matrix(1, nrow = p, ncol = 1)
-  }
-  if(!is.data.frame(X_mean) && !is.matrix(X_mean)) {
-    stop("'X_mean' not valid: it must be a matrix or a dataframe.")
-  }
-  if(!is.data.frame(X_cov) && !is.matrix(X_cov)) {
-    stop("'X_cov' not valid: it must be a matrix or a dataframe.")
-  }
-  if(p != nrow(X_mean)) {
-    stop("'Y' and 'X_mean' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_mean'.")
-  }
-  if(p != nrow(X_cov)) {
-    stop("'Y' and 'X_cov' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_cov'.")
-  }
-  if((length(stdx) != 1) || !is.logical(stdx)) {
-    stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
-  }
-  if(stdx) {
-    is.fact.xm = sapply(X_mean, is.factor)
-    X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
-    if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
-      X_mean <- model.matrix(XmeanFormula, X_mean)
+    X_cov <- X_mean
+  } else {
+    if(!is.data.frame(X_cov) && !is.matrix(X_cov)) {
+      stop("'X_cov' not valid: it must be a matrix or a dataframe.")
+    }
+    if(p != nrow(X_cov)) {
+      stop("'Y' and 'X_cov' not compatible: the number of columns of 'Y' must be equal to the number of rows of 'X_cov'.")
+    }
+    if((length(stdx) != 1) || !is.logical(stdx)) {
+      stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
     }
     is.fact.xc <- sapply(X_cov, is.factor)
     X_cov[, is.fact.xc == FALSE] <- scale(X_cov[, is.fact.xc == FALSE])
@@ -293,8 +298,7 @@ AGS_SIS_R <- function(Y,
     }
     n_unif <- matrix(runif(n * p), nrow = n, ncol = p)
     Z <- truncnorm_lg(y_lower = log(a_y), y_upper = log(a_yp1),
-                      mu = Zmean, sigma = 1 / sqrt(ps), u_rand = n_unif)
-
+                      mu = Zmean, sigma = sqrt(1 / ps), u_rand = n_unif)
     if(!is.null(W)) {
       # ---------------------------------------------------------------------- #
       # 2 - update b_mu
@@ -307,8 +311,6 @@ AGS_SIS_R <- function(Y,
       } else {
         Qbet <- prec_mu + crossprod(W)
       }
-      # mu <- t(sapply(1:p, update_mu_R, Qbet=Qbet, W=W, Z_res=Z_res, ps=ps,
-      #                b_mu=b_mu, Xcov=X, c=c))
       for(j in 1:p) {
         mu[j, ] <- update_mu_R(j, Qbet, W, Z_res, ps, b_mu, X_mean, c)
       }
@@ -337,13 +339,9 @@ AGS_SIS_R <- function(Y,
     for(h in 1:k) {
       Beta[, h] <- update_beta_R(h, X_cov, Dt, Bh_1, Phi_L, q_cov)
     }
-    # Beta <- sapply(1:k, update_beta_R, Xcov=X, Dt=Dt, Bh_1=Bh_1, Phi_L=Phi_L, q=q)
-    # if(q==1) Beta <- matrix(Beta, nrow=1, ncol=k)
     # ------------------------------------------------------------------------ #
     # 7 - update Lambda and Lambda_star
     etarho <- t(eta) * rho
-    # Lambda_star <- t(sapply(1:p, update_Lambda_star_R, etarho=etarho, Phi=Phi,
-    #                         Plam=Plam, ps=ps, Z=Z, k=k))
     for (j in 1:p) {
       Lambda_star[j, ] <- update_Lambda_star_R(j, etarho, Phi, Plam, ps, Z, k)
     }
@@ -352,8 +350,6 @@ AGS_SIS_R <- function(Y,
     # 8.1 - update d
     sdy <- matrix(rep(sqrt(1/ps), n), n, p, byrow = TRUE)
     etalambdastar <- eta[rep(1:n, p), ] * Lambda_star[rep(1:p, each=n), ]
-    # d <- sapply(1:k, function(h) update_d_R, Phi=Phi, p=p, n=n, rho=rho,
-    #             etalambdastar=etalambdastar, Z=Z, sdy=sdy, k=k, w=w)
     for(h in 1:k) {
       d[h] <- update_d_R(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w)
     }
@@ -371,8 +367,7 @@ AGS_SIS_R <- function(Y,
     # 9 - update Phi
     pred <- X_cov %*% Beta
     logit <- plogis(pred)
-    Phi <- update_Phi_R(rho, logit, p_constant, p, n,
-                        eta, Lambda_star, Phi, Z, sdy)
+    Phi <- update_Phi_R(rho, logit, p_constant, p, n, eta, Lambda_star, Phi, Z, sdy)
     # ------------------------------------------------------------------------ #
     # save sampled values (after burn-in period)
     if((i %% thin == 0) & (i > burn)) {

@@ -4,7 +4,7 @@
 \alias{update_Phi}
 \title{Update Phi in the Adaptive Gibbs Sampler}
 \usage{
-update_Phi(rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, sdy, k)
+update_Phi(rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, ps, k)
 }
 \arguments{
 \item{rho}{A k-dimensional vector.}
@@ -25,7 +25,7 @@ update_Phi(rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, sdy, k)
 
 \item{Z}{A nxp matrix.}
 
-\item{sdy}{A nxp matrix.}
+\item{ps}{A p-dimensional vector.}
 
 \item{k}{An integer.}
 }

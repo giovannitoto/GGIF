@@ -156,7 +156,7 @@ update_Lambda_star <- function(j, etarho, Phi, Plam, ps, Z, k) {
 #' @param eta A nxk matrix.
 #' @param lambdastar A pxk matrix.
 #' @param Z A nxp matrix.
-#' @param sdy A nxp matrix.
+#' @param ps A p-dimensional vector.
 #' @param k An integer.
 #' @param w A k-dimensional vector.
 #'
@@ -164,8 +164,8 @@ update_Lambda_star <- function(j, etarho, Phi, Plam, ps, Z, k) {
 #'
 #' @note This function uses \code{Rcpp} for computational efficiency.
 #'
-update_d <- function(h, Phi, p, n, rho, eta, lambdastar, Z, sdy, k, w) {
-    .Call(`_GGIF_update_d`, h, Phi, p, n, rho, eta, lambdastar, Z, sdy, k, w)
+update_d <- function(h, Phi, p, n, rho, eta, lambdastar, Z, ps, k, w) {
+    .Call(`_GGIF_update_d`, h, Phi, p, n, rho, eta, lambdastar, Z, ps, k, w)
 }
 
 #' Update Phi in the Adaptive Gibbs Sampler
@@ -179,15 +179,15 @@ update_d <- function(h, Phi, p, n, rho, eta, lambdastar, Z, sdy, k, w) {
 #' @param lambdastar A pxk matrix.
 #' @param Phi A pxk matrix.
 #' @param Z A nxp matrix.
-#' @param sdy A nxp matrix.
+#' @param ps A p-dimensional vector.
 #' @param k An integer.
 #'
 #' @return A pxk matrix.
 #'
 #' @note This function uses \code{Rcpp} for computational efficiency.
 #'
-update_Phi <- function(rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, sdy, k) {
-    .Call(`_GGIF_update_Phi`, rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, sdy, k)
+update_Phi <- function(rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, ps, k) {
+    .Call(`_GGIF_update_Phi`, rho, logit, p_constant, p, n, eta, lambdastar, Phi, Z, ps, k)
 }
 
 rcpp_pgdraw <- function(b, c) {

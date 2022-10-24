@@ -7,7 +7,7 @@
 AGS_SIS_R(
   Y,
   X_mean = NULL,
-  X_cov = X_mean,
+  X_cov = NULL,
   W = NULL,
   seed = 28,
   stdx = TRUE,

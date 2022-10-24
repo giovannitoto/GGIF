@@ -17,10 +17,10 @@ arma::mat update_Lambda_star(int j, const arma::mat& etarho, const arma::mat& Ph
 
 int update_d(int h, const arma::mat& Phi, int p, int n, const arma::vec& rho,
              const arma::mat& eta, const arma::mat& lambdastar, const arma::mat& Z,
-             const arma::mat& sdy, int k, const arma::vec& w);
+             const arma::vec& ps, int k, const arma::vec& w);
 
 arma::mat update_Phi(const arma::vec& rho, const arma::mat& logit, double p_constant,
                      int p, int n, const arma::mat& eta, const arma::mat& lambdastar,
-                     arma::mat& Phi, const arma::mat& Z, const arma::mat& sdy, int k);
+                     arma::mat& Phi, const arma::mat& Z, const arma::vec& ps, int k);
 
 #endif

@@ -203,7 +203,7 @@ update_d_R <- function(h, Phi, p, n, rho, etalambdastar, Z, sdy, k, w) {
   lnorm1 <- lnorm1 - mlnorm
   prob_h <- exp(c(rep(lnorm0, h), rep(lnorm1, k - h)) + log(w))
   if(sum(prob_h) == 0) prob_h <- c(rep(0, k - 1), 1)
-  which(rmultinom(n=1, size=1, prob=prob_h) == 1)
+  which(rmultinom(n = 1, size = 1, prob = prob_h / sum(prob_h)) == 1)
 }
 
 # ---------------------------------------------------------------------------- #
