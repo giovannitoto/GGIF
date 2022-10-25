@@ -137,12 +137,10 @@ AGS_SIS <- function(Y,
     if((length(stdx) != 1) || !is.logical(stdx)) {
       stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
     }
-    if(stdx) {
+    if(stdx & is.data.frame(X_mean)) {
       is.fact.xm = sapply(X_mean, is.factor)
       X_mean[, is.fact.xm == FALSE] <- scale(X_mean[, is.fact.xm == FALSE])
-      if(is.data.frame(X_mean) & ncol(X_mean) > 1) {
-        X_mean <- model.matrix(XmeanFormula, X_mean)
-      }
+      X_mean <- model.matrix(XmeanFormula, X_mean)
     }
   }
   if(is.null(X_cov)) {
@@ -157,9 +155,9 @@ AGS_SIS <- function(Y,
     if((length(stdx) != 1) || !is.logical(stdx)) {
       stop("'stdx' not valid: it must be 'TRUE' or 'FALSE'.")
     }
-    is.fact.xc <- sapply(X_cov, is.factor)
-    X_cov[, is.fact.xc == FALSE] <- scale(X_cov[, is.fact.xc == FALSE])
-    if(is.data.frame(X_cov) & ncol(X_cov) > 1) {
+    if(stdx & is.data.frame(X_cov)) {
+      is.fact.xc <- sapply(X_cov, is.factor)
+      X_cov[, is.fact.xc == FALSE] <- scale(X_cov[, is.fact.xc == FALSE])
       X_cov <- model.matrix(XcovFormula, X_cov)
     }
   }
@@ -177,12 +175,10 @@ AGS_SIS <- function(Y,
     if((length(stdw) != 1) || !is.logical(stdw)) {
       stop("'stdw' not valid: it must be 'TRUE' or 'FALSE'.")
     }
-    if(stdw) {
+    if(stdw & is.data.frame(W)) {
       is.fact.w <- sapply(W, is.factor)
       W[, is.fact.w == FALSE] <-  scale(W[, is.fact.w == FALSE])
-      if(is.data.frame(W) & ncol(W) > 1) {
-        W <- model.matrix(WFormula, W)
-      }
+      W <- model.matrix(WFormula, W)
     }
     c <- ncol(W)
   } else {
