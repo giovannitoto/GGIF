@@ -3,6 +3,7 @@
 export(AGS_SIS)
 export(AGS_SIS_R)
 export(AGS_SIS_RC)
+export(contributions)
 export(lposterior)
 export(posterior_mean)
 import(RcppArmadillo)
