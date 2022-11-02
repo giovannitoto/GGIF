@@ -25,69 +25,69 @@ contributions <- function(out_MCMC, reference = NULL, verbose = TRUE) {
     if((length(reference) != 1) || !is.numeric(reference) || (reference != round(reference)) || reference > length(out_MCMC$numFactors)) {
       stop("'reference' not valid: it must be NULL or an integer between 1 and the number of iterations..")
     }
-    # number of active factors of reference iteration
-    kstar_ref <- out_MCMC$numFactors[reference]
+    # number of factors of reference iteration
+    k_ref <- ncol(out_MCMC$lambda[[reference]])
     # compute contributions NOT in order of reference iteration
     C_list <- list()
-    for (h in 1:kstar_ref) {
+    for (h in 1:k_ref) {
       C_list[[paste0("C", h)]] <- tcrossprod(out_MCMC$eta[[reference]][, h], out_MCMC$lambda[[reference]][, h])
     }
     # compute order of the contributions using Frobenius norm
     C_order <- order(sapply(C_list, function(C) norm(C, type = "F")), decreasing = TRUE)
     # order contributions of reference iteration
     C_ref <- list()
-    for (h in 1:kstar_ref) {
+    for (h in 1:k_ref) {
       C_ref[[paste0("C", h)]] <- C_list[[paste0("C", C_order[h])]]
     }
   }
   # -------------------------------------------------------------------------- #
   n <- nrow(out_MCMC$eta[[1]])
   p <- nrow(out_MCMC$lambda[[1]])
-  kstar_max <- max(out_MCMC$numFactors)
+  k_max <- max(sapply(out_MCMC$lambda, ncol))
   # -------------------------------------------------------------------------- #
   output <- list()
   # output <- list("reference" = reference)
-  for (h in 1:kstar_max) {
+  for (h in 1:k_max) {
     output[[paste0("C", h)]] <- vector("list", length = length(out_MCMC$numFactors))
   }
   # -------------------------------------------------------------------------- #
   for (it in 1:length(out_MCMC$numFactors)) {
-    # number of active factors
-    kstar <- out_MCMC$numFactors[it]
+    # number of factors
+    k <- ncol(out_MCMC$lambda[[it]])
     # compute contributions NOT in order
     C_list <- list()
-    for (h in 1:kstar) {
+    for (h in 1:k) {
       C_list[[paste0("C", h)]] <- tcrossprod(out_MCMC$eta[[it]][, h], out_MCMC$lambda[[it]][, h])
     }
-    # add matrices of zeros if kstar is less than the maximum kstar observed
-    if (kstar < kstar_max) {
-      for (h in (kstar+1):kstar_max) C_list[[paste0("C", h)]] <- matrix(0, nrow = n, ncol = p)
+    # add matrices of zeros if k is less than the maximum k observed
+    if (k < k_max) {
+      for (h in (k+1):k_max) C_list[[paste0("C", h)]] <- matrix(0, nrow = n, ncol = p)
     }
     # compute order using Frobenius norm or reference iteration
     if(is.null(reference)) {
       # compute order of the contributions using Frobenius norm
       C_order <- order(sapply(C_list, function(C) norm(C, type = "F")), decreasing = TRUE)
       # save contributions
-      for (h in 1:kstar_max) {
+      for (h in 1:k_max) {
         output[[paste0("C", h)]][[it]] <- C_list[[paste0("C", C_order[h])]]
       }
     } else {
       # compute order of the contributions using reference iteration
-      for (h in 1:kstar_ref) {
+      for (h in 1:k_ref) {
         min_idx <- names(which.min(sapply(C_list, function(C) norm(C - C_ref[[paste0("C", h)]], type = "F"))))
         output[[paste0("C", h)]][[it]] <- C_list[[min_idx]]
         C_list[[min_idx]] <- NULL
       }
-      if(kstar_ref < kstar_max) {
+      if(k_ref < k_max) {
         # the remaining contributions are sorted using Frobenius norm
-        for (h in (kstar_ref+1):kstar_max) {
+        for (h in (k_ref+1):k_max) {
           min_idx <- names(which.min(sapply(C_list, function(C) norm(C, type = "F"))))
           output[[paste0("C", h)]][[it]] <- C_list[[paste0("C", min_idx)]]
           C_list[[paste0("C", min_idx)]] <- NULL
         }
       }
     }
-    if(verbose == TRUE && it %% 50 == 0) cat(it, ":", kstar, "active factors\n")
+    if(verbose == TRUE && it %% 50 == 0) cat(it, ":", out_MCMC$numFactors[it], "active factors\n")
   }
   # -------------------------------------------------------------------------- #
   return(output)
