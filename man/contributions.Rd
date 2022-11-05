@@ -4,7 +4,7 @@
 \alias{contributions}
 \title{Contributions}
 \usage{
-contributions(out_MCMC, reference = NULL, verbose = FALSE)
+contributions(out_MCMC, reference = NULL, verbose = TRUE)
 }
 \arguments{
 \item{out_MCMC}{A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.}
