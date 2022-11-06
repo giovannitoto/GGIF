@@ -54,10 +54,10 @@ arma::mat update_bmu(const arma::mat& X, double prec_mu, double prec_b,
   if (arma::min(eigval) > 0.000001) {
     Tmat = trans(eigvec.each_row() % trans(sqrt(eigval)));
   } else {
-    if (!Vgmbeta1.is_symmetric()) {
-      Rcout << "update_bmu" << "\t";
-      Vgmbeta1 = arma::symmatu(Vgmbeta1);
-    }
+    // if (!Vgmbeta1.is_symmetric()) {
+    //   Rcout << "update_bmu" << "\t";
+    //   Vgmbeta1 = arma::symmatu(Vgmbeta1);
+    // }
     Tmat = arma::chol(Vgmbeta1);
   }
   arma::mat Q;
@@ -143,10 +143,10 @@ arma::mat update_eta(const arma::mat& Lambda, const arma::vec& ps, int k, const 
   if (arma::min(eigval) > 0.000001) {
     Tmat = trans(eigvec.each_row() % trans(sqrt(eigval)));
   } else {
-    if (!Tmat.is_symmetric()) {
-      Rcout << "update_eta" << "\t";
-      Tmat = arma::symmatu(Tmat);
-    }
+    // if (!Tmat.is_symmetric()) {
+    //   Rcout << "update_eta" << "\t";
+    //   Tmat = arma::symmatu(Tmat);
+    // }
     Tmat = arma::chol(Veta1);
   }
   arma::mat Q;
@@ -181,10 +181,10 @@ arma::mat update_eta(const arma::mat& Lambda, const arma::vec& ps, int k, const 
 arma::mat update_beta(int h, const arma::mat& Xcov, const arma::mat& Dt,
                       const arma::mat& Bh_1, const arma::mat& Phi_L, int q) {
   arma::mat Qbeta = trans(Xcov.each_col() % Dt.col(h)) * Xcov + Bh_1;
-  if (!Qbeta.is_symmetric()) {
-    Rcout << "update_beta" << "\t";
-    Qbeta = arma::symmatu(Qbeta);
-  }
+  // if (!Qbeta.is_symmetric()) {
+  //   Rcout << "update_beta" << "\t";
+  //   Qbeta = arma::symmatu(Qbeta);
+  // }
   arma::mat Lbeta = trans(arma::chol(Qbeta));
   arma::vec bbeta = trans(Xcov) * (Phi_L.col(h) - 0.5);
   // mean
@@ -218,13 +218,13 @@ arma::mat update_Lambda_star(int j, const arma::mat& etarho, const arma::mat& Ph
                              const arma::mat& Plam, const arma::vec& ps, const arma::mat& Z, int k) {
   arma::mat etaj = trans(etarho.each_col() % trans(Phi.row(j)));
   arma::mat Qlam = Plam + ps(j) * trans(etaj) * etaj;
-  if (!Qlam.is_symmetric()) {
-    Rcout << "update_Lambda_star." << arma::max(Qlam) << "\t";
-    Qlam = arma::symmatu(Qlam);
-    if (!Qlam.is_sympd()) {
-      Rcout << "!!!" << "\t";
-    }
-  }
+  // if (!Qlam.is_symmetric()) {
+  //   Rcout << "update_Lambda_star." << arma::max(Qlam) << "\t";
+  //   Qlam = arma::symmatu(Qlam);
+  //   if (!Qlam.is_sympd()) {
+  //     Rcout << "!!!" << "\t";
+  //   }
+  // }
   arma::mat Llam = trans(arma::chol(Qlam));
   arma::vec blam = ps(j) * trans(etaj) * Z.col(j);
   // mean

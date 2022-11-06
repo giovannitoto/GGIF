@@ -123,10 +123,10 @@ Rcpp::List Rcpp_AGS_SIS(double alpha, double as, arma::mat a_y, arma::mat a_yp1,
       } else {
         Qbet = prec_mu + trans(W) * W;
       }
-      if (!Qbet.is_symmetric()) {
-        Rcout << "update_mu" << "\t";
-        Qbet = arma::symmatu(Qbet);
-      }
+      // if (!Qbet.is_symmetric()) {
+      //   Rcout << "update_mu" << "\t";
+      //   Qbet = arma::symmatu(Qbet);
+      // }
       for (j = 0; j < p; j++) {
         mu.row(j) = update_mu(j, Qbet, W, Z_res, ps, b_mu, X_mean, c);
       }
