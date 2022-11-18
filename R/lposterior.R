@@ -38,10 +38,9 @@ lposterior <- function(out_MCMC, frac_sampled = 1, samples = NULL,
   } else {
     set.seed(seed)
   }
-  set.seed(seed)
   # check whether all necessary variables are available in out_MCMC
-  required_variables <- c("Y", "X", "numFactors", "beta", "eta", "lambda",
-                          "sigmacol", "hyperparameters")
+  required_variables <- c("Y", "X_mean", "X_cov", "numFactors", "beta", "eta",
+                          "lambda", "sigmacol", "hyperparameters")
   if(check_list(out_MCMC, required_variables) == FALSE) {
     stop(paste(paste(c(required_variables), collapse = ", "), "must be stored in the MCMC output."))
   }
@@ -149,8 +148,7 @@ lposterior_function <- function(ind, out_MCMC, columns = "k") {
   }
   # generate values from a truncated normal distribution
   mean_z <- mean_pr + tcrossprod(eta, Lambda)
-  Z <- gen_z(Y = out_MCMC$Y, mean = mean_z, ps = out_MCMC$sigmacol[[ind]],
-             y_max = hyperpar$y_max)
+  Z <- gen_z(Y = out_MCMC$Y, mean = mean_z, ps = out_MCMC$sigmacol[[ind]], y_max = hyperpar$y_max)
   # compute inverse and log determinant of omega
   omega_inv <- omega_inversion(lambda = Lambda, sigmai = out_MCMC$sigmacol[[ind]])
   omega_log_det <- det_log_omega(lambda = Lambda, sigmai = out_MCMC$sigmacol[[ind]])
@@ -164,7 +162,7 @@ lposterior_function <- function(ind, out_MCMC, columns = "k") {
   ll <- sum(val)
   # prior of Lambda beta
   p_gamma1 <- (hyperpar$alpha / (1 + hyperpar$alpha)) ^ seq(1, K)
-  prob <- plogis(out_MCMC$X %*% Beta)
+  prob <- plogis(out_MCMC$X_cov %*% Beta)
   p_phi1 <- prob * hyperpar$p_constant  # p_phi1 <-  prob * 2*exp(1)*log(p)/p
   # log prior of beta
   lp_beta <- sum(dnorm(Beta, mean = 0, sd = sqrt(hyperpar$sd_beta), log = TRUE))
@@ -183,7 +181,7 @@ lposterior_function <- function(ind, out_MCMC, columns = "k") {
     } else {
       lp_col_nonzero <- LaplacesDemon::dmvt(x = Lambda[, h], mu = rep(0, p),
                                             S = (hyperpar$b_theta / hyperpar$a_theta) * diag(p),
-                                            df = 2 * hyperpar$a_theta, log=T)
+                                            df = 2 * hyperpar$a_theta, log = TRUE)
       lp_col_lambda[h] <- log(p_gamma1[h]) + sum(log(p_phi1[, h])) + lp_col_nonzero
     }
   }
@@ -191,12 +189,10 @@ lposterior_function <- function(ind, out_MCMC, columns = "k") {
   # log prior mu and b_mu
   if("W" %in% names(out_MCMC)){
     # log prior of b_mu
-    lp_b_mu = sum(dnorm(out_MCMC$bmu[[ind]], mean = 0,
-                        sd = sqrt(hyperpar$sd_b), log = T))
+    lp_b_mu = sum(dnorm(out_MCMC$bmu[[ind]], mean = 0, sd = sqrt(hyperpar$sd_b), log = TRUE))
     # log prior of mu
-    me_mu = out_MCMC$X %*% out_MCMC$bmu[[ind]]
-    lp_mu = sum(dnorm(out_MCMC$mu[[ind]], mean = me_mu,
-                      sd = sqrt(hyperpar$sd_mu), log = T))
+    me_mu = out_MCMC$X_mean %*% out_MCMC$bmu[[ind]]
+    lp_mu = sum(dnorm(out_MCMC$mu[[ind]], mean = me_mu, sd = sqrt(hyperpar$sd_mu), log = TRUE))
   } else {
     lp_mu <- lp_b_mu <- 0
   }
@@ -251,7 +247,7 @@ det_log_omega <- function(lambda, sigmai) {
 log_multinorm <- function(z, mu, omega_inv, omega_log_det) {
   p <- dim(omega_inv)[1]
   zmu <- z - mu
-  val <- - p / 2 * log(2*pi) - 0.5 * omega_log_det - 0.5 * crossprod(zmu, omega_inv) %*% zmu
+  val <- - p / 2 * log(2 * pi) - 0.5 * omega_log_det - 0.5 * crossprod(zmu, omega_inv) %*% zmu
   return(val)
 }
 
@@ -287,10 +283,9 @@ gen_z <- function(Y, mean, ps, y_max) {
     a_y[,j] <- a_j(Y[, j], y_max)        #   a_y = a_j(y)
     a_yp1[,j] <- a_j(Y[, j] + 1, y_max)  # a_yp1 = a_j(y + 1)
   }
-  Z <- matrix(NA, nrow = n, ncol = p)
   n_unif <- matrix(runif(n * p), nrow = n, ncol = p)
   Z <- truncnorm_lg(y_lower = log(a_y), y_upper = log(a_yp1),
-                    mu = mean, sigma = 1/sqrt(ps), u_rand = n_unif)
+                    mu = mean, sigma = 1 / sqrt(ps), u_rand = n_unif)
   return(Z)
 }
 
