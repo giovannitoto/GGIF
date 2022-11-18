@@ -46,20 +46,20 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
       stop("'lambda', 'numFactors' and 'sigmacol' must be stored in the MCMC output.")
     } else {
       # number of iterations
-      t <- length(out_MCMC$sigmacol)
+      t <- length(out_MCMC$numFactors)
       p <- nrow(out_MCMC$lambda[[1]])
       out_MCMC$lambda <- rescale_parameter(out_MCMC = out_MCMC, parameters = "lambda", columns = columns)$lambda
       if ("omega" %in% parameters) {
-        output[["omega"]] <- 0
+        output[["omega"]] <- matrix(0, nrow = p, ncol = p)
         for (i in 1:t) {
-          output[["omega"]] <- output[["omega"]] + omega_inversion(out_MCMC$lambda[[i]], out_MCMC$sigmacol[[i]])
+          output[["omega"]] <- output[["omega"]] + tcrossprod(out_MCMC$lambda[[i]]) + diag(1 / out_MCMC$sigmacol[[i]])
         }
         output[["omega"]] <- output[["omega"]] / t
       }
       if ("omega_inv" %in% parameters) {
-        output[["omega_inv"]] <- 0
+        output[["omega_inv"]] <- matrix(0, nrow = p, ncol = p)
         for (i in 1:t) {
-          output[["omega_inv"]] <- output[["omega_inv"]] + tcrossprod(out_MCMC$lambda[[i]]) + diag(1 / out_MCMC$sigmacol[[i]])
+          output[["omega_inv"]] <- output[["omega_inv"]] + omega_inversion(out_MCMC$lambda[[i]], out_MCMC$sigmacol[[i]])
         }
         output[["omega_inv"]] <- output[["omega_inv"]] / t
       }
