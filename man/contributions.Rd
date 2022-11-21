@@ -4,12 +4,14 @@
 \alias{contributions}
 \title{Contributions}
 \usage{
-contributions(out_MCMC, reference = NULL, verbose = TRUE)
+contributions(out_MCMC, reference = NULL, chains = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{out_MCMC}{A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.}
 
 \item{reference}{An integer specifying the reference iteration used to sort the contributions of each iteration; if \code{reference=NULL}, the contributions are sorted using the Frobenius norm. Default is \code{NULL}.}
+
+\item{chains}{Logical: if \code{TRUE}, the function returns also the draws from the posterior distribution of \eqn{C^*_1,\ldots,C^*_{k_{max}}}.}
 
 \item{verbose}{Logical: if \code{TRUE}, print the number of active factors every 50 iterations. Default is \code{TRUE}.}
 }
