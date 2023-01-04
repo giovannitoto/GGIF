@@ -232,6 +232,9 @@ AGS_SIS <- function(Y,
     a_y[, j] <- a_j(Y[, j], y_max)        # a_y = a_j(y)
     a_yp1[, j] <- a_j(Y[, j] + 1, y_max)  # a_yp1 = a_j(y + 1)
   }
+  # Replace NA with 0/Inf in a_y/a_yp1
+  a_y[is.na(Y)] <- 0      # log(0)=-Inf
+  a_yp1[is.na(Y)] <- Inf  # log(Inf)=Inf
   # -------------------------------------------------------------------------- #
   # Adaptive probability
   if((length(b0) != 1) || !is.numeric(b0) || (b0 < 0)) {
