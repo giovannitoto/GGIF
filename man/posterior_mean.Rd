@@ -9,7 +9,7 @@ posterior_mean(out_MCMC, parameters = "all", columns = "k")
 \arguments{
 \item{out_MCMC}{A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.}
 
-\item{parameters}{A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"sigmacol"}, \code{"omega"} and \code{"omega_inv"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol", "omega", "omega_inv")}.}
+\item{parameters}{A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"sigmacol"}, \code{"omega"} and \code{"omega_inv"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol", "omega", "omega_inv", "omega_pcorr")}.}
 
 \item{columns}{A string specifying whether to consider only active factors (\code{"kstar"}) or both active and inactive factors (\code{"k"}) for the computation of \code{omega} and \code{omega_inv}. Default is \code{"k"}.}
 }

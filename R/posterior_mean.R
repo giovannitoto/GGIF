@@ -5,7 +5,7 @@
 #' Compute the posterior mean of one or more parameters.
 #'
 #' @param out_MCMC A list containing the results of an Adaptive Gibbs Sampler obtained using the function \code{\link{AGS_SIS}}.
-#' @param parameters A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"sigmacol"}, \code{"omega"} and \code{"omega_inv"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol", "omega", "omega_inv")}.
+#' @param parameters A vector containing the names of the parameters for which you want to compute the posterior mean. The possible valid strings are \code{"mu"}, \code{"bmu"}, \code{"sigmacol"}, \code{"omega"} and \code{"omega_inv"}. Default is \code{"all"}, which is equivalent to writing \code{c("mu", "bmu", "sigmacol", "omega", "omega_inv", "omega_pcorr")}.
 #' @param columns A string specifying whether to consider only active factors (\code{"kstar"}) or both active and inactive factors (\code{"k"}) for the computation of \code{omega} and \code{omega_inv}. Default is \code{"k"}.
 #'
 #' @return A list containing the posterior means of the parameters specified in \code{parameters}.
@@ -15,7 +15,7 @@
 #' @export
 posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
   # remove invalid strings from 'parameters'
-  valid_parameters <- c("mu", "bmu", "sigmacol", "omega", "omega_inv")
+  valid_parameters <- c("mu", "bmu", "sigmacol", "omega", "omega_inv", "omega_pcorr")
   if("all" %in% parameters) {
     parameters <- valid_parameters
   } else {
@@ -37,7 +37,7 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
     }
   }
   # compute the posterior mean of 'omega' and/or 'omega_inv'
-  if (any(c("omega", "omega_inv") %in% parameters)) {
+  if (any(c("omega", "omega_inv", "omega_pcorr") %in% parameters)) {
     # check the value of 'columns'
     if((length(columns) != 1) || !(columns %in% c("k", "kstar"))) {
       stop("'columns' not valid: it must be 'k' or 'kstar'.")
@@ -62,6 +62,14 @@ posterior_mean <- function(out_MCMC, parameters = "all", columns = "k") {
           output[["omega_inv"]] <- output[["omega_inv"]] + omega_inversion(out_MCMC$lambda[[i]], out_MCMC$sigmacol[[i]])
         }
         output[["omega_inv"]] <- output[["omega_inv"]] / t
+      }
+      if("omega_pcorr" %in% parameters) {
+        output[["omega_pcorr"]] <- matrix(0, nrow = p, ncol = p)
+        for (i in 1:t) {
+          omega <- tcrossprod(out_MCMC$lambda[[i]]) + diag(1 / out_MCMC$sigmacol[[i]])
+          output[["omega_pcorr"]] <- output[["omega_pcorr"]] + stats::cov2cor(solve(omega))
+        }
+        output[["omega_pcorr"]] <- output[["omega_pcorr"]] / t
       }
     }
   }
